@@ -57,8 +57,17 @@ gereedschap uitleensysteem
    python app.py
    ```
 
-   De app maakt de database en tabellen automatisch aan (`db/schema.sql`) en
-   start op <http://127.0.0.1:5000>.
+   Werkt je MariaDB-root met wachtwoord-login (bv. lokaal op een
+   ontwikkelmachine), dan maakt de app de database en tabellen automatisch
+   aan. Gebruikt je root unix-socket-authenticatie (standaard op Ubuntu),
+   maak de database en tabellen dan handmatig vooraf:
+
+   ```bash
+   sudo mariadb -e "CREATE DATABASE IF NOT EXISTS gereedschap_leensysteem CHARACTER SET utf8mb4"
+   sudo mariadb gereedschap_leensysteem < db/schema.sql
+   ```
+
+   Daarna start de app op <http://127.0.0.1:5000>.
 
 ## Gebruik
 
@@ -83,14 +92,15 @@ gereedschap uitleensysteem
 
 ## Installatie op Ubuntu Server
 
-Deze handleiding gaat uit van Ubuntu Server 22.04 of 24.04 en installeert de
-app als systeemservice onder een eigen gebruiker.
+Deze handleiding gaat uit van Ubuntu Server 22.04 of 24.04 en doorloopt de
+stappen in deze volgorde: pakketten → app-code → database → configuratie →
+tabellen en test → service → bereikbaarheid.
 
 ### 1. Systeempakketten
 
 ```bash
 sudo apt update
-sudo apt install -y python3 python3-venv python3-pip git mariadb-server
+sudo apt install -y python3 python3-venv python3-pip git mariadb-server nginx
 ```
 
 Beveilig MariaDB (root-wachtwoord instellen, anonieme gebruikers weg):
@@ -99,24 +109,9 @@ Beveilig MariaDB (root-wachtwoord instellen, anonieme gebruikers weg):
 sudo mysql_secure_installation
 ```
 
-### 2. Databasegebruiker aanmaken
+### 2. App-code ophalen
 
-Log in als root en maak de gebruiker en database voor de app:
-
-```bash
-sudo mysql
-```
-
-```sql
-CREATE DATABASE gereedschap_leensysteem
-    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'gereedschap'@'localhost' IDENTIFIED BY 'kies-een-goed-wachtwoord';
-GRANT ALL PRIVILEGES ON gereedschap_leensysteem.* TO 'gereedschap'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
-```
-
-### 3. App ophalen en Python-omgeving maken
+Maak een eigen systeemgebruiker en zet de code in `/opt/hebjijvoormij/app`:
 
 ```bash
 sudo adduser --system --group --home /opt/hebjijvoormij hebjijvoormij
@@ -130,10 +125,27 @@ code dan bij in plaats van opnieuw te klonen:
 sudo -u hebjijvoormij git -C /opt/hebjijvoormij/app pull
 ```
 
+Maak de Python-omgeving en installeer de dependencies:
+
 ```bash
 cd /opt/hebjijvoormij/app
 sudo -u hebjijvoormij python3 -m venv venv
 sudo -u hebjijvoormij venv/bin/pip install -r requirements.txt
+```
+
+### 3. Database en databasegebruiker aanmaken
+
+```bash
+sudo mariadb
+```
+
+```sql
+CREATE DATABASE gereedschap_leensysteem
+    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'gereedschap'@'localhost' IDENTIFIED BY 'kies-een-goed-wachtwoord';
+GRANT ALL PRIVILEGES ON gereedschap_leensysteem.* TO 'gereedschap'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
 ```
 
 ### 4. Configuratie
@@ -160,11 +172,19 @@ sudo chown hebjijvoormij:hebjijvoormij /opt/hebjijvoormij/app/.env
 sudo chmod 600 /opt/hebjijvoormij/app/.env
 ```
 
-### 5. Database initialiseren en testen
+### 5. Tabellen aanmaken en app testen
+
+De tabellen worden als éénmalige actie aangemaakt met het schema uit de repo
+(MariaDB-root werkt op Ubuntu via `sudo`, dus dit hoeft niet via de app):
+
+```bash
+sudo mariadb gereedschap_leensysteem < /opt/hebjijvoormij/app/db/schema.sql
+```
+
+Test de app handmatig:
 
 ```bash
 cd /opt/hebjijvoormij/app
-sudo -u hebjijvoormij bash -c 'set -a; source .env; set +a; venv/bin/flask --app app init-db'
 sudo -u hebjijvoormij bash -c 'set -a; source .env; set +a; venv/bin/python app.py'
 ```
 
@@ -195,11 +215,8 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-De app luistert standaard alleen op `127.0.0.1`. Maak hem bereikbaar voor
-je vrienden via de reverse proxy uit stap 7 (aanrader), zodat poort 5000
-intern blijft.
-
-Activeer en start de service:
+De app luistert standaard alleen op `127.0.0.1`; de systemd-service draait
+de app dus uitsluitend lokaal. Activeer en start de service:
 
 ```bash
 sudo systemctl daemon-reload
@@ -213,12 +230,13 @@ Logbestanden bekijken:
 journalctl -u hebjijvoormij -f
 ```
 
-### 7. Reverse proxy met HTTPS (aanrader)
+### 7. Bereikbaar maken via nginx met HTTPS
 
-Plaats de app achter nginx met HTTPS, bijvoorbeeld
-`/etc/nginx/sites-available/hebjijvoormij`:
+Maak de site-configuratie `/etc/nginx/sites-available/hebjijvoormij` (pas
+`gereedschap.voorbeeld.nl` aan naar je eigen domein):
 
-```nginx
+```bash
+sudo tee /etc/nginx/sites-available/hebjijvoormij > /dev/null <<'NGINX'
 server {
     listen 80;
     server_name gereedschap.voorbeeld.nl;
@@ -229,22 +247,32 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
+NGINX
 ```
 
+Activeer de site en herlaad nginx:
+
 ```bash
-sudo apt install -y nginx
 sudo ln -s /etc/nginx/sites-available/hebjijvoormij /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
+```
+
+Zet de firewall aan (SSH eerst openhouden, anders sluit je jezelf uit):
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 'Nginx Full'
+sudo ufw enable
+```
+
+Voeg HTTPS toe met certbot:
+
+```bash
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d gereedschap.voorbeeld.nl
 ```
 
-Open tenslotte poort 80/443 in de firewall:
-
-```bash
-sudo ufw allow 'Nginx Full'
-sudo ufw enable
-```
+De app is nu bereikbaar via `https://gereedschap.voorbeeld.nl`.
 
 ### 8. Updates
 
@@ -252,11 +280,14 @@ sudo ufw enable
 sudo systemctl stop hebjijvoormij
 sudo -u hebjijvoormij git -C /opt/hebjijvoormij/app pull
 sudo -u hebjijvoormij /opt/hebjijvoormij/app/venv/bin/pip install -r /opt/hebjijvoormij/app/requirements.txt
-sudo systemctl start hebjijvoormij
 ```
 
-De app voert bij het opstarten automatisch databasemigraties uit, dus
-nieuwe kolommen en tabellen worden zonder handmatig werk toegevoegd.
+Nieuwe kolommen en tabellen worden door de app bij het opstarten
+automatisch toegevoegd aan de database (migraties).
+
+```bash
+sudo systemctl start hebjijvoormij
+```
 
 ### 9. Back-up
 

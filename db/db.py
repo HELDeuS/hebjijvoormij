@@ -1,4 +1,5 @@
 import os
+import threading
 
 import mysql.connector
 from mysql.connector import pooling
@@ -12,10 +13,16 @@ DB_CONFIG = {
     "autocommit": True,
 }
 
-_pool = pooling.MySQLConnectionPool(pool_size=5, **DB_CONFIG)
+_pool = None
+_pool_lock = threading.Lock()
 
 
 def _connect():
+    global _pool
+    if _pool is None:
+        with _pool_lock:
+            if _pool is None:
+                _pool = pooling.MySQLConnectionPool(pool_size=5, **DB_CONFIG)
     return _pool.get_connection()
 
 

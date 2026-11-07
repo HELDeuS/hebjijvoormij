@@ -299,5 +299,12 @@ def init_db_command():
 
 
 if __name__ == "__main__":
-    init_db()
+    try:
+        init_db()
+    except Exception as exc:
+        print(
+            f"Waarschuwing: database-initialisatie is overgeslagen ({exc}). "
+            "Maak de tabellen handmatig aan met: "
+            "sudo mariadb gereedschap_leensysteem < db/schema.sql"
+        )
     app.run(host="127.0.0.1", port=5000, debug=True)
