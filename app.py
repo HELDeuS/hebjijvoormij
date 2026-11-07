@@ -15,9 +15,12 @@ from db.db import (
     get_tool,
     get_tools,
     init_db,
+    remove_tool_image,
     reject_loan,
     return_loan,
+    set_tool_image,
 )
+from images import download_image, find_and_store_image
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-key-verander-dit")
@@ -83,18 +86,63 @@ def tools():
         name = request.form.get("name", "").strip()
         description = request.form.get("description", "").strip()
         category = request.form.get("category", "").strip()
+        brand = request.form.get("brand", "").strip()
+        model = request.form.get("model", "").strip()
         if not owner_id or not name:
             flash("Eigenaar en naam zijn verplicht.", "error")
-        elif add_tool(owner_id, name, description, category):
-            flash(f"Gereedschap '{name}' is geregistreerd.", "success")
-        else:
+            return redirect(url_for("tools", friend_id=owner_id))
+        tool_id = add_tool(owner_id, name, description, category, brand, model)
+        if tool_id is None:
             flash("Dit gereedschap bestaat al.", "error")
+        else:
+            flash(f"Gereedschap '{name}' is geregistreerd.", "success")
+            if brand or model:
+                image_path = find_and_store_image(tool_id, name, brand, model)
+                if image_path:
+                    set_tool_image(tool_id, image_path)
+                    flash("Er is automatisch een plaatje opgezocht en toegevoegd.", "success")
+                else:
+                    flash(
+                        "Geen bruikbaar plaatje gevonden; je kunt het handmatig "
+                        "toevoegen via 'Plaatje zoeken' of een afbeeldings-URL.",
+                        "warning",
+                    )
         return redirect(url_for("tools", friend_id=owner_id))
     return render_template(
         "tools.html",
         friend=friend,
         tools_list=get_tools(friend["id"] if friend else None),
     )
+
+
+@app.route("/tools/<int:tool_id>/image", methods=["POST"])
+def tool_image(tool_id):
+    tool = get_tool(tool_id)
+    if not tool:
+        flash("Gereedschap niet gevonden.", "error")
+        return redirect(url_for("tools"))
+    action = request.form.get("action")
+    if action == "search":
+        image_path = find_and_store_image(
+            tool_id, tool["name"], tool.get("brand"), tool.get("model")
+        )
+        if image_path:
+            set_tool_image(tool_id, image_path)
+            flash("Plaatje gevonden en toegevoegd.", "success")
+        else:
+            flash("Geen bruikbaar plaatje gevonden.", "warning")
+    elif action == "url":
+        image_url = request.form.get("image_url", "").strip()
+        image_path = download_image(image_url, tool_id) if image_url else None
+        if image_path:
+            set_tool_image(tool_id, image_path)
+            flash("Plaatje toegevoegd.", "success")
+        else:
+            flash("Deze afbeeldings-URL kon niet worden gedownload.", "error")
+    elif action == "remove":
+        remove_tool_image(tool_id)
+        flash("Plaatje verwijderd.", "success")
+    return redirect(url_for("tools", friend_id=request.form.get("friend_id", type=int)))
 
 
 @app.route("/loans", methods=["GET", "POST"])

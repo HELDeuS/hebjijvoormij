@@ -15,35 +15,67 @@
         <label>Naam* <input type="text" name="name" required></label>
         <label>Omschrijving <input type="text" name="description"></label>
         <label>Categorie <input type="text" name="category" placeholder="bv. elektra, tuin, klussen"></label>
+        <label>Merk <input type="text" name="brand" placeholder="bv. Bosch"></label>
+        <label>Type <input type="text" name="model" placeholder="bv. PSB 1800 LI-2"></label>
         <button type="submit">Registreren</button>
     </form>
+    <p class="hint">Bij het invullen van merk en type wordt automatisch een plaatje opgezocht.</p>
 </section>
 
 <section>
     <h2>{% if friend %}Gereedschap van {{ friend.name }}{% else %}Volledige catalogus{% endif %}</h2>
     {% if tools_list %}
-    <table>
-        <thead>
-            <tr><th>Naam</th><th>Omschrijving</th><th>Categorie</th><th>Eigenaar</th><th>Status</th></tr>
-        </thead>
-        <tbody>
-            {% for tool in tools_list %}
-            <tr>
-                <td>{{ tool.name }}</td>
-                <td>{{ tool.description or "-" }}</td>
-                <td>{{ tool.category or "-" }}</td>
-                <td>{{ tool.owner_name }}</td>
-                <td>
+    <div class="tool-grid">
+        {% for tool in tools_list %}
+        <article class="tool-card">
+            <div class="tool-image">
+                {% if tool.image_path %}
+                <img src="{{ url_for('static', filename=tool.image_path) }}" alt="{{ tool.name }}">
+                {% else %}
+                <span class="no-image">🔧</span>
+                {% endif %}
+            </div>
+            <div class="tool-body">
+                <h3>{{ tool.name }}</h3>
+                <p class="meta">
+                    {% if tool.brand or tool.model %}
+                    {{ [tool.brand, tool.model] | select | join(' ') }}<br>
+                    {% endif %}
+                    <span class="owner">van {{ tool.owner_name }}</span>
+                </p>
+                <p>{{ tool.description or "" }}</p>
+                <p class="meta">{{ tool.category or "" }}</p>
+                <p>
                     {% if tool.active_loan_id %}
                     <span class="status {{ tool.loan_status }}">{{ STATUS_LABELS[tool.loan_status] }}</span>
                     {% else %}
                     <span class="status beschikbaar">Beschikbaar</span>
                     {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </p>
+                <div class="tool-actions">
+                    <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline">
+                        <input type="hidden" name="action" value="search">
+                        <input type="hidden" name="friend_id" value="{{ friend.id if friend else '' }}">
+                        <button type="submit">Plaatje zoeken</button>
+                    </form>
+                    <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline url-form">
+                        <input type="hidden" name="action" value="url">
+                        <input type="hidden" name="friend_id" value="{{ friend.id if friend else '' }}">
+                        <input type="url" name="image_url" placeholder="of plak een afbeeldings-URL">
+                        <button type="submit">Toevoegen</button>
+                    </form>
+                    {% if tool.image_path %}
+                    <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline">
+                        <input type="hidden" name="action" value="remove">
+                        <input type="hidden" name="friend_id" value="{{ friend.id if friend else '' }}">
+                        <button type="submit" class="reject">Verwijderen</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
     {% else %}
     <p>Nog geen gereedschap geregistreerd.</p>
     {% endif %}

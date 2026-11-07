@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS tools (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     category VARCHAR(50),
+    brand VARCHAR(100),
+    model VARCHAR(100),
+    image_path VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_owner_tool (owner_id, name),
     FOREIGN KEY (owner_id) REFERENCES friends(id)

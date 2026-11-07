@@ -79,8 +79,25 @@ def init_db():
                 for statement in f.read().split(";"):
                     if statement.strip():
                         cur.execute(statement)
+            _migrate(cur)
     finally:
         cnx.close()
+
+
+def _migrate(cur):
+    cur.execute(
+        "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+        "WHERE TABLE_SCHEMA = 'gereedschap_leensysteem' AND TABLE_NAME = 'tools'"
+    )
+    existing = {row[0] for row in cur.fetchall()}
+    migrations = {
+        "brand": "ALTER TABLE tools ADD COLUMN brand VARCHAR(100)",
+        "model": "ALTER TABLE tools ADD COLUMN model VARCHAR(100)",
+        "image_path": "ALTER TABLE tools ADD COLUMN image_path VARCHAR(255)",
+    }
+    for column, statement in migrations.items():
+        if column not in existing:
+            cur.execute(statement)
 
 
 def get_friend(friend_id):
@@ -101,17 +118,31 @@ def add_friend(name, email, phone):
             return False
 
 
-def add_tool(owner_id, name, description, category):
+def add_tool(owner_id, name, description, category, brand=None, model=None):
     with Database() as db:
         try:
             db._execute(
-                "INSERT INTO tools (owner_id, name, description, category) "
-                "VALUES (%s, %s, %s, %s)",
-                (owner_id, name, description, category),
+                "INSERT INTO tools (owner_id, name, description, category, brand, model) "
+                "VALUES (%s, %s, %s, %s, %s, %s)",
+                (owner_id, name, description, category, brand, model),
             )
-            return True
+            return db._query("SELECT LAST_INSERT_ID() AS id")[0]["id"]
         except mysql.connector.errors.IntegrityError:
-            return False
+            return None
+
+
+def set_tool_image(tool_id, image_path):
+    with Database() as db:
+        db._execute(
+            "UPDATE tools SET image_path = %s WHERE id = %s", (image_path, tool_id)
+        )
+
+
+def remove_tool_image(tool_id):
+    with Database() as db:
+        db._execute(
+            "UPDATE tools SET image_path = NULL WHERE id = %s", (tool_id,)
+        )
 
 
 def get_tools(owner_id=None, available_only=False):

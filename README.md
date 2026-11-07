@@ -7,6 +7,9 @@ gereedschap uitleensysteem
 - **Vrienden** – registreer vrienden met naam, e-mail en telefoonnummer.
 - **Gereedschapscatalogus** – registreer gereedschap per eigenaar, met
   omschrijving en categorie.
+  Zijn merk en type bekend, dan wordt er automatisch een plaatje
+  opgezocht en op de gereedschapskaart getoond (ook handmatig te
+  zoeken of via een eigen afbeeldings-URL toe te voegen).
 - **Uitleningen met status** – leenverzoeken doorlopen de statuscyclus
   `aangevraagd` → `uitgeleend` → `teruggekeerd` (of `geweigerd`).
 - **Overzichten** – openstaande uitleningen en verzoeken, per-vriend statistieken,

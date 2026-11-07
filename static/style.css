@@ -110,3 +110,45 @@ th { color: var(--muted); font-size: .8rem; text-transform: uppercase; }
 .flash.error { background: #f7dede; color: #822; }
 
 footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 1rem; }
+
+.hint { color: var(--muted); font-size: .8rem; margin-top: .5rem; }
+
+.tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.tool-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--card);
+    display: flex;
+    flex-direction: column;
+}
+
+.tool-image {
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef1f0;
+}
+
+.tool-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.no-image { font-size: 3rem; }
+
+.tool-body { padding: .75rem 1rem; }
+.tool-body h3 { margin: 0 0 .25rem; font-size: 1.05rem; }
+.tool-body .meta { margin: .15rem 0; font-size: .85rem; color: var(--muted); }
+.tool-body .owner { font-weight: 600; }
+
+.tool-actions { display: flex; flex-direction: column; gap: .4rem; margin-top: .5rem; }
+.tool-actions form { gap: .25rem; }
+.url-form input { flex: 1; min-width: 0; }
