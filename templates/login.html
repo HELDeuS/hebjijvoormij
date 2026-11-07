@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Inloggen - hebjijvoormij{% endblock %}
+{% block content %}
+<section class="login-box">
+    <h2>Inloggen</h2>
+    <form method="post">
+        <label>Naam <input type="text" name="name" required autofocus></label>
+        <label>Wachtwoord <input type="password" name="password" required></label>
+        <button type="submit">Inloggen</button>
+    </form>
+    <p class="hint">Nog niet geregistreerd? Vraag een vriend om je aan te melden via de pagina Vrienden.</p>
+    <p class="hint">Log je voor het eerst in, dan wordt het opgegeven wachtwoord direct je vaste wachtwoord.</p>
+</section>
+{% endblock %}

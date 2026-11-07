@@ -7,6 +7,7 @@
         <label>Naam* <input type="text" name="name" required></label>
         <label>E-mail <input type="email" name="email"></label>
         <label>Telefoon <input type="tel" name="phone"></label>
+        <label>Wachtwoord* <input type="password" name="password" minlength="6" required></label>
         <button type="submit">Registreren</button>
     </form>
 </section>
@@ -16,7 +17,7 @@
     {% if friends_list %}
     <table>
         <thead>
-            <tr><th>Naam</th><th>E-mail</th><th>Telefoon</th><th>Sinds</th></tr>
+            <tr><th>Naam</th><th>E-mail</th><th>Telefoon</th><th>Inlogstatus</th></tr>
         </thead>
         <tbody>
             {% for f in friends_list %}

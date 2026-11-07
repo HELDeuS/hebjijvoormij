@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS friends (
     name VARCHAR(100) NOT NULL UNIQUE,
     email VARCHAR(255),
     phone VARCHAR(50),
+    password_hash VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

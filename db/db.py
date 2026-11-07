@@ -94,6 +94,9 @@ def _migrate(cur):
         "brand": "ALTER TABLE tools ADD COLUMN brand VARCHAR(100)",
         "model": "ALTER TABLE tools ADD COLUMN model VARCHAR(100)",
         "image_path": "ALTER TABLE tools ADD COLUMN image_path VARCHAR(255)",
+        "password_hash": (
+            "ALTER TABLE friends ADD COLUMN password_hash VARCHAR(255)"
+        ),
     }
     for column, statement in migrations.items():
         if column not in existing:
@@ -106,16 +109,31 @@ def get_friend(friend_id):
         return rows[0] if rows else None
 
 
-def add_friend(name, email, phone):
+def add_friend(name, email, phone, password_hash=None):
     with Database() as db:
         try:
             db._execute(
-                "INSERT INTO friends (name, email, phone) VALUES (%s, %s, %s)",
-                (name, email, phone),
+                "INSERT INTO friends (name, email, phone, password_hash) "
+                "VALUES (%s, %s, %s, %s)",
+                (name, email, phone, password_hash),
             )
-            return True
+            return db._query("SELECT LAST_INSERT_ID() AS id")[0]["id"]
         except mysql.connector.errors.IntegrityError:
-            return False
+            return None
+
+
+def get_friend_by_name(name):
+    with Database() as db:
+        rows = db._query("SELECT * FROM friends WHERE name = %s", (name,))
+        return rows[0] if rows else None
+
+
+def set_friend_password(friend_id, password_hash):
+    with Database() as db:
+        db._execute(
+            "UPDATE friends SET password_hash = %s WHERE id = %s",
+            (password_hash, friend_id),
+        )
 
 
 def add_tool(owner_id, name, description, category, brand=None, model=None):

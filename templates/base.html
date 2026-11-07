@@ -9,22 +9,20 @@
 <body>
 <header>
     <h1>🔧 hebjijvoormij</h1>
+    {% if friend %}
     <nav>
         <a href="{{ url_for('index') }}">Overzicht</a>
         <a href="{{ url_for('friends') }}">Vrienden</a>
         <a href="{{ url_for('tools') }}">Gereedschap</a>
         <a href="{{ url_for('loans') }}">Uitleningen</a>
     </nav>
-    <form method="get" action="{{ request.path }}" class="friend-picker">
-        <label for="friend_id">Actieve vriend:</label>
-        <select name="friend_id" onchange="this.form.submit()">
-            <option value="">— kies een vriend —</option>
-            {% for f in friends %}
-            <option value="{{ f.id }}" {% if friend and friend.id == f.id %}selected{% endif %}>{{ f.name }}</option>
-            {% endfor %}
-        </select>
-        <noscript><button type="submit">Kies</button></noscript>
-    </form>
+    <div class="user-bar">
+        <span>👋 {{ friend.name }}</span>
+        <form method="post" action="{{ url_for('logout') }}" class="inline">
+            <button type="submit">Uitloggen</button>
+        </form>
+    </div>
+    {% endif %}
 </header>
 
 {% with messages = get_flashed_messages(with_categories=true) %}

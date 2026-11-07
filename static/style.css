@@ -161,3 +161,6 @@ footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 1r
 .link-remove { background: none; border: none; color: var(--danger); cursor: pointer; padding: 0 .25rem; font-size: .9rem; }
 .link-add { margin-top: .35rem; }
 .link-add select { flex: 1; min-width: 0; }
+
+.user-bar { display: flex; gap: .75rem; align-items: center; }
+.login-box { max-width: 480px; margin: 0 auto; }

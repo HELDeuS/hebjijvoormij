@@ -34,7 +34,7 @@
         <tbody>
             {% for s in stats %}
             <tr>
-                <td><a href="{{ url_for('index', friend_id=s.id) }}">{{ s.name }}</a></td>
+                <td>{{ s.name }}</td>
                 <td>{{ s.tool_count }}</td>
                 <td>{{ s.active_lent }}</td>
                 <td>{{ s.pending_requests }}</td>

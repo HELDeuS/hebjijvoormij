@@ -23,7 +23,7 @@
 </section>
 
 <section>
-    <h2>{% if friend %}Gereedschap van {{ friend.name }}{% else %}Volledige catalogus{% endif %}</h2>
+    <h2>Volledige catalogus</h2>
     {% if tools_list %}
     <div class="tool-grid">
         {% for tool in tools_list %}
@@ -57,7 +57,6 @@
                             <form method="post" action="{{ url_for('tool_link', tool_id=tool.id) }}" class="inline">
                                 <input type="hidden" name="action" value="remove">
                                 <input type="hidden" name="linked_tool_id" value="{{ link.linked_id }}">
-                                <input type="hidden" name="friend_id" value="{{ friend.id if friend else '' }}">
                                 <button type="submit" class="link-remove" title="Koppeling verwijderen">✕</button>
                             </form>
                         </li>
@@ -67,7 +66,6 @@
                     <p class="meta">Nog geen koppelingen.</p>
                     {% endif %}
                     <form method="post" action="{{ url_for('tool_link', tool_id=tool.id) }}" class="inline link-add">
-                        <input type="hidden" name="friend_id" value="{{ friend.id if friend else '' }}">
                         <select name="linked_tool_id" required>
                             <option value="">— kies gereedschap —</option>
                             {% for other in all_tools %}
@@ -89,19 +87,16 @@
                 <div class="tool-actions">
                     <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline">
                         <input type="hidden" name="action" value="search">
-                        <input type="hidden" name="friend_id" value="{{ friend.id if friend else '' }}">
                         <button type="submit">Plaatje zoeken</button>
                     </form>
                     <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline url-form">
                         <input type="hidden" name="action" value="url">
-                        <input type="hidden" name="friend_id" value="{{ friend.id if friend else '' }}">
                         <input type="url" name="image_url" placeholder="of plak een afbeeldings-URL">
                         <button type="submit">Toevoegen</button>
                     </form>
                     {% if tool.image_path %}
                     <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline">
                         <input type="hidden" name="action" value="remove">
-                        <input type="hidden" name="friend_id" value="{{ friend.id if friend else '' }}">
                         <button type="submit" class="reject">Verwijderen</button>
                     </form>
                     {% endif %}

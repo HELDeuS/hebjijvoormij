@@ -5,15 +5,7 @@
     <h2>Leenverzoek aanmaken</h2>
     <form method="post">
         <input type="hidden" name="action" value="request">
-        <label>Lener*
-            <select name="borrower_id" required>
-                <option value="">— kies een vriend —</option>
-                {% for f in friends %}
-                <option value="{{ f.id }}" {% if friend and friend.id == f.id %}selected{% endif %}>{{ f.name }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>Gereedschap*
+                <label>Gereedschap*
             <select name="tool_id" required>
                 <option value="">— kies gereedschap —</option>
                 {% for tool in available_tools %}
@@ -28,8 +20,8 @@
 {% if friend %}
 {% if combi_suggestions %}
 <section>
-    <h2>Combi-suggesties voor {{ friend.name }}</h2>
-    <p class="hint">Dit gereedschap combineert goed met wat {{ friend.name }} nu leent of heeft aangevraagd:</p>
+    <h2>Combi-suggesties</h2>
+    <p class="hint">Dit gereedschap combineert goed met wat je nu leent of hebt aangevraagd:</p>
     <table>
         <thead>
             <tr><th>Bij dit gereedschap</th><th>Combi-gereedschap</th><th>Eigenaar</th><th>Actie</th></tr>
@@ -79,20 +71,17 @@
                     <form method="post" class="inline">
                         <input type="hidden" name="action" value="approve">
                         <input type="hidden" name="loan_id" value="{{ tool.loan_id }}">
-                        <input type="hidden" name="friend_id" value="{{ friend.id }}">
                         <button type="submit" class="approve">Goedkeuren</button>
                     </form>
                     <form method="post" class="inline">
                         <input type="hidden" name="action" value="reject">
                         <input type="hidden" name="loan_id" value="{{ tool.loan_id }}">
-                        <input type="hidden" name="friend_id" value="{{ friend.id }}">
                         <button type="submit" class="reject">Weigeren</button>
                     </form>
                     {% elif tool.loan_id and tool.loan_status == 'uitgeleend' %}
                     <form method="post" class="inline">
                         <input type="hidden" name="action" value="return">
                         <input type="hidden" name="loan_id" value="{{ tool.loan_id }}">
-                        <input type="hidden" name="friend_id" value="{{ friend.id }}">
                         <button type="submit" class="return">Terugontvangen</button>
                     </form>
                     {% else %}
@@ -132,7 +121,5 @@
     <p>Nog geen transacties.</p>
     {% endif %}
 </section>
-{% else %}
-<p>Kies hierboven een vriend om zijn of haar uitleningen en verzoeken te zien en te beheren.</p>
 {% endif %}
 {% endblock %}

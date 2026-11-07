@@ -62,13 +62,24 @@ gereedschap uitleensysteem
 
 ## Gebruik
 
-1. Registreer je vrienden onder **Vrienden**.
-2. Kies rechtsboven een "actieve vriend" om door zijn/haar ogen te kijken.
+1. Registreer je vrienden onder **Vrienden** (met wachtwoord van minimaal
+   6 tekens). Bestaande vrienden zonder wachtwoord kiezen hun wachtwoord
+   bij de eerste keer inloggen.
+2. Log in met je naam en wachtwoord; alles wat je doet, gebeurt onder je
+   eigen account.
 3. Registreer gereedschap onder **Gereedschap** (kies de eigenaar).
 4. Onder **Uitleningen** maak je een leenverzoek aan; de eigenaar keurt het
    goed of wijst het af, en het gereedschap wordt teruggegeven via
    "Terugontvangen".
 5. Het **Overzicht** toont alle openstaande leningen en statistieken per vriend.
+
+### Inloggen en beveiliging
+
+- Elke vriend logt in met naam en wachtwoord; wachtwoorden worden gehasht
+  opgeslagen (werkzeug/scrypt) en nooit in platte tekst.
+- Alle pagina's zijn alleen bereikbaar na inloggen.
+- Zet een sterk `SECRET_KEY`-geheim in de omgevingsvariabelen, want daarmee
+  worden de sessies ondertekend.
 
 ## Installatie op Ubuntu Server
 
