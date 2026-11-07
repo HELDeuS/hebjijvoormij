@@ -3,6 +3,7 @@ import threading
 
 import mysql.connector
 from mysql.connector import pooling
+from werkzeug.security import generate_password_hash
 
 DB_CONFIG = {
     "host": os.environ.get("DB_HOST", "127.0.0.1"),
@@ -104,6 +105,10 @@ def _migrate(cur):
         "password_hash": (
             "ALTER TABLE friends ADD COLUMN password_hash VARCHAR(255)"
         ),
+        "is_admin": "ALTER TABLE friends ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0",
+        "must_change_password": (
+            "ALTER TABLE friends ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0"
+        ),
     }
     for column, statement in migrations.items():
         if column not in existing:
@@ -116,13 +121,13 @@ def get_friend(friend_id):
         return rows[0] if rows else None
 
 
-def add_friend(name, email, phone, password_hash=None):
+def add_friend(name, email, phone, password_hash=None, must_change_password=False):
     with Database() as db:
         try:
             db._execute(
-                "INSERT INTO friends (name, email, phone, password_hash) "
-                "VALUES (%s, %s, %s, %s)",
-                (name, email, phone, password_hash),
+                "INSERT INTO friends (name, email, phone, password_hash, must_change_password) "
+                "VALUES (%s, %s, %s, %s, %s)",
+                (name, email, phone, password_hash, must_change_password),
             )
             return db._query("SELECT LAST_INSERT_ID() AS id")[0]["id"]
         except mysql.connector.errors.IntegrityError:
@@ -138,9 +143,30 @@ def get_friend_by_name(name):
 def set_friend_password(friend_id, password_hash):
     with Database() as db:
         db._execute(
-            "UPDATE friends SET password_hash = %s WHERE id = %s",
+            "UPDATE friends SET password_hash = %s, must_change_password = 0 "
+            "WHERE id = %s",
             (password_hash, friend_id),
         )
+
+
+def ensure_admin():
+    """Maakt de beheerder aan met de vooraf bekende standaardgegevens als er
+    nog geen beheerder bestaat. De beheerder moet bij de eerste login een
+    nieuw wachtwoord kiezen."""
+    name = os.environ.get("ADMIN_NAME", "admin")
+    password = os.environ.get("ADMIN_PASSWORD", "beheer123")
+    with Database() as db:
+        rows = db._query("SELECT id FROM friends WHERE is_admin = 1 LIMIT 1")
+        if rows:
+            return
+        try:
+            db._execute(
+                "INSERT INTO friends (name, email, phone, password_hash, "
+                "is_admin, must_change_password) VALUES (%s, %s, %s, %s, 1, 1)",
+                (name, "", "", generate_password_hash(password)),
+            )
+        except mysql.connector.errors.IntegrityError:
+            pass
 
 
 def add_tool(owner_id, name, description, category, brand=None, model=None):

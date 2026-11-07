@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS friends (
     email VARCHAR(255),
     phone VARCHAR(50),
     password_hash VARCHAR(255),
+    is_admin TINYINT(1) NOT NULL DEFAULT 0,
+    must_change_password TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

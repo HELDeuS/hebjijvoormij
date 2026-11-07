@@ -3,6 +3,7 @@
 {% block content %}
 <section>
     <h2>Nieuwe vriend registreren</h2>
+    {% if friend and friend.is_admin %}
     <form method="post">
         <label>Naam* <input type="text" name="name" required></label>
         <label>E-mail <input type="email" name="email"></label>
@@ -10,6 +11,10 @@
         <label>Wachtwoord* <input type="password" name="password" minlength="6" required></label>
         <button type="submit">Registreren</button>
     </form>
+    <p class="hint">De nieuwe vriend kiest bij de eerste login een eigen wachtwoord.</p>
+    {% else %}
+    <p class="hint">Alleen de beheerder kan nieuwe vrienden registreren.</p>
+    {% endif %}
 </section>
 
 <section>

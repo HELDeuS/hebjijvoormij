@@ -30,6 +30,7 @@ from db.db import (
     get_overview,
     get_tool,
     get_tools,
+    ensure_admin,
     init_db,
     remove_tool_image,
     remove_tool_link,
@@ -81,9 +82,14 @@ def load_current_friend():
 def login():
     if g.friend:
         return redirect(url_for("index"))
+    try:
+        ensure_admin()
+    except Exception:
+        pass
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         password = request.form.get("password", "")
+        new_password = request.form.get("new_password", "")
         friend = get_friend_by_name(name)
         if not friend:
             flash("Onbekende naam. Ben je al geregistreerd als vriend?", "error")
@@ -96,12 +102,26 @@ def login():
                 "success",
             )
             return redirect(url_for("index"))
-        elif check_password_hash(friend["password_hash"], password):
+        elif not check_password_hash(friend["password_hash"], password):
+            flash("Onjuist wachtwoord.", "error")
+        elif friend["must_change_password"]:
+            if len(new_password) < 6:
+                flash(
+                    "Dit is je eerste login: kies een nieuw wachtwoord van "
+                    "minstens 6 tekens.",
+                    "warning",
+                )
+                return render_template("login.html", show_change=True, name=name)
+            set_friend_password(friend["id"], generate_password_hash(new_password))
+            session["friend_id"] = friend["id"]
+            flash(
+                f"Welkom {friend['name']}! Je wachtwoord is gewijzigd.", "success"
+            )
+            return redirect(url_for("index"))
+        else:
             session["friend_id"] = friend["id"]
             flash(f"Welkom terug, {friend['name']}!", "success")
             return redirect(url_for("index"))
-        else:
-            flash("Onjuist wachtwoord.", "error")
     return render_template("login.html")
 
 
@@ -122,6 +142,9 @@ def index():
 @login_required
 def friends():
     if request.method == "POST":
+        if not g.friend["is_admin"]:
+            flash("Alleen de beheerder kan nieuwe vrienden toevoegen.", "error")
+            return redirect(url_for("friends"))
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
         phone = request.form.get("phone", "").strip()
@@ -130,12 +153,20 @@ def friends():
             flash("Naam is verplicht en het wachtwoord moet minstens 6 tekens zijn.", "error")
         else:
             friend_id = add_friend(
-                name, email, phone, generate_password_hash(password)
+                name,
+                email,
+                phone,
+                generate_password_hash(password),
+                must_change_password=True,
             )
             if friend_id is None:
                 flash("Deze vriend bestaat al.", "error")
             else:
-                flash(f"Vriend {name} is geregistreerd.", "success")
+                flash(
+                    f"Vriend {name} is geregistreerd; "
+                    f"hij/zij kiest bij de eerste login een eigen wachtwoord.",
+                    "success",
+                )
         return redirect(url_for("friends"))
     return render_template("friends.html", friends_list=Database().get_friends())
 
@@ -301,6 +332,7 @@ def init_db_command():
 if __name__ == "__main__":
     try:
         init_db()
+        ensure_admin()
     except Exception as exc:
         print(
             f"Waarschuwing: database-initialisatie is overgeslagen ({exc}). "

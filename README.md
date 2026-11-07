@@ -74,10 +74,14 @@ gereedschap uitleensysteem
 
 ## Gebruik
 
-1. Registreer je vrienden onder **Vrienden** (met wachtwoord van minimaal
-   6 tekens). Bestaande vrienden zonder wachtwoord kiezen hun wachtwoord
-   bij de eerste keer inloggen.
-2. Log in met je naam en wachtwoord; alles wat je doet, gebeurt onder je
+1. De app maakt automatisch een **beheerder** aan met vooraf bekende
+   inloggegevens: naam `admin`, wachtwoord `beheer123` (aanpasbaar via
+   `ADMIN_NAME` en `ADMIN_PASSWORD` in de omgeving). Bij de eerste login
+   is de beheerder verplicht een nieuw wachtwoord te kiezen.
+2. De beheerder registreert vrienden onder **Vrienden** met een
+   startwachtwoord; elke nieuwe vriend kiest bij de eerste login een
+   eigen wachtwoord.
+3. Log in met je naam en wachtwoord; alles wat je doet, gebeurt onder je
    eigen account.
 3. Registreer gereedschap onder **Gereedschap** (kies de eigenaar).
 4. Onder **Uitleningen** maak je een leenverzoek aan; de eigenaar keurt het
@@ -191,8 +195,10 @@ cd /opt/hebjijvoormij/app
 sudo -u hebjijvoormij bash -c 'set -a; source .env; set +a; venv/bin/python app.py'
 ```
 
-De app is nu bereikbaar op `http://127.0.0.1:5000`. Stop met Ctrl-C en ga
-verder met de service-installatie.
+De app is nu bereikbaar op `http://127.0.0.1:5000`. Log in met de
+beheerdersgegevens (standaard `admin` / `beheer123`, instelbaar via
+`ADMIN_NAME` en `ADMIN_PASSWORD` in de `.env`) en kies direct een nieuw
+wachtwoord. Stop daarna met Ctrl-C en ga verder met de service-installatie.
 
 ### 6. Systemd-service
 
