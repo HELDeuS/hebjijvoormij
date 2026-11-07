@@ -152,3 +152,12 @@ footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 1r
 .tool-actions { display: flex; flex-direction: column; gap: .4rem; margin-top: .5rem; }
 .tool-actions form { gap: .25rem; }
 .url-form input { flex: 1; min-width: 0; }
+
+.tool-links { margin-top: .5rem; border-top: 1px dashed var(--border); padding-top: .5rem; }
+.tool-links h4 { margin: 0 0 .25rem; font-size: .85rem; color: var(--primary-dark); }
+.tool-links ul { list-style: none; margin: 0; padding: 0; }
+.tool-links li { display: flex; align-items: center; gap: .35rem; font-size: .9rem; padding: .1rem 0; }
+.tool-links li form { margin-left: auto; }
+.link-remove { background: none; border: none; color: var(--danger); cursor: pointer; padding: 0 .25rem; font-size: .9rem; }
+.link-add { margin-top: .35rem; }
+.link-add select { flex: 1; min-width: 0; }

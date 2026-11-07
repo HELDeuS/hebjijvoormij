@@ -5,17 +5,20 @@ from db.db import (
     Database,
     add_friend,
     add_tool,
+    add_tool_link,
     approve_loan,
     create_loan_request,
     get_friend,
     get_friend_stats,
     get_friend_tools,
     get_friend_transactions,
+    get_linked_tools_map,
     get_overview,
     get_tool,
     get_tools,
     init_db,
     remove_tool_image,
+    remove_tool_link,
     reject_loan,
     return_loan,
     set_tool_image,
@@ -108,11 +111,40 @@ def tools():
                         "warning",
                     )
         return redirect(url_for("tools", friend_id=owner_id))
+    tools_list = get_tools(friend["id"] if friend else None)
     return render_template(
         "tools.html",
         friend=friend,
-        tools_list=get_tools(friend["id"] if friend else None),
+        tools_list=tools_list,
+        all_tools=get_tools(),
+        links=get_linked_tools_map([t["id"] for t in tools_list]),
     )
+
+
+@app.route("/tools/<int:tool_id>/link", methods=["POST"])
+def tool_link(tool_id):
+    tool = get_tool(tool_id)
+    linked_id = request.form.get("linked_tool_id", type=int)
+    if not tool:
+        flash("Gereedschap niet gevonden.", "error")
+        return redirect(url_for("tools"))
+    if request.form.get("action") == "remove":
+        if linked_id:
+            remove_tool_link(tool_id, linked_id)
+            flash("Koppeling verwijderd.", "success")
+    else:
+        linked = get_tool(linked_id) if linked_id else None
+        if not linked:
+            flash("Kies een gereedschap om te koppelen.", "error")
+        elif linked["id"] == tool["id"]:
+            flash("Een gereedschap kan niet met zichzelf gekoppeld worden.", "error")
+        elif add_tool_link(tool_id, linked_id):
+            flash(
+                f"'{tool['name']}' is gekoppeld aan '{linked['name']}'.", "success"
+            )
+        else:
+            flash("Deze koppeling bestaat al.", "error")
+    return redirect(url_for("tools", friend_id=request.form.get("friend_id", type=int)))
 
 
 @app.route("/tools/<int:tool_id>/image", methods=["POST"])

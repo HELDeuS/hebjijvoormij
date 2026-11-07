@@ -35,3 +35,12 @@ CREATE TABLE IF NOT EXISTS loans (
     FOREIGN KEY (tool_id) REFERENCES tools(id),
     FOREIGN KEY (borrower_id) REFERENCES friends(id)
 );
+
+CREATE TABLE IF NOT EXISTS tool_links (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tool_id INT NOT NULL,
+    linked_tool_id INT NOT NULL,
+    UNIQUE KEY uq_link (tool_id, linked_tool_id),
+    FOREIGN KEY (tool_id) REFERENCES tools(id) ON DELETE CASCADE,
+    FOREIGN KEY (linked_tool_id) REFERENCES tools(id) ON DELETE CASCADE
+);

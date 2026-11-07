@@ -10,6 +10,9 @@ gereedschap uitleensysteem
   Zijn merk en type bekend, dan wordt er automatisch een plaatje
   opgezocht en op de gereedschapskaart getoond (ook handmatig te
   zoeken of via een eigen afbeeldings-URL toe te voegen).
+- **Combi-gereedschap** – koppel bijbehorend gereedschap aan elkaar
+  (bv. speciale boren bij een boormachine); op de kaart terug te
+  vinden onder "Goed te combineren met".
 - **Uitleningen met status** – leenverzoeken doorlopen de statuscyclus
   `aangevraagd` → `uitgeleend` → `teruggekeerd` (of `geweigerd`).
 - **Overzichten** – openstaande uitleningen en verzoeken, per-vriend statistieken,

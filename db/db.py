@@ -212,6 +212,57 @@ def return_loan(loan_id):
         ) > 0
 
 
+def add_tool_link(tool_id, linked_tool_id):
+    """Koppelt twee gereedschappen symmetrisch aan elkaar."""
+    if tool_id == linked_tool_id:
+        return False
+    with Database() as db:
+        try:
+            db._execute(
+                "INSERT INTO tool_links (tool_id, linked_tool_id) "
+                "VALUES (%s, %s), (%s, %s)",
+                (tool_id, linked_tool_id, linked_tool_id, tool_id),
+            )
+            return True
+        except mysql.connector.errors.IntegrityError:
+            return False
+
+
+def remove_tool_link(tool_id, linked_tool_id):
+    with Database() as db:
+        db._execute(
+            "DELETE FROM tool_links "
+            "WHERE (tool_id = %s AND linked_tool_id = %s) "
+            "   OR (tool_id = %s AND linked_tool_id = %s)",
+            (tool_id, linked_tool_id, linked_tool_id, tool_id),
+        )
+
+
+def get_linked_tools_map(tool_ids):
+    """Geeft per gereedschap-id een lijst van gekoppelde gereedschappen terug."""
+    if not tool_ids:
+        return {}
+    placeholders = ",".join(["%s"] * len(tool_ids))
+    with Database() as db:
+        rows = db._query(
+            f"""
+            SELECT tl.tool_id, t.id AS linked_id, t.name AS linked_name,
+                   t.brand AS linked_brand, t.model AS linked_model,
+                   f.name AS linked_owner, t.image_path AS linked_image
+            FROM tool_links tl
+            JOIN tools t ON t.id = tl.linked_tool_id
+            JOIN friends f ON f.id = t.owner_id
+            WHERE tl.tool_id IN ({placeholders})
+            ORDER BY t.name
+            """,
+            tuple(tool_ids),
+        )
+    links = {}
+    for row in rows:
+        links.setdefault(row["tool_id"], []).append(row)
+    return links
+
+
 def get_friend_transactions(friend_id):
     with Database() as db:
         return db._query(
