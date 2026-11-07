@@ -26,6 +26,35 @@
 </section>
 
 {% if friend %}
+{% if combi_suggestions %}
+<section>
+    <h2>Combi-suggesties voor {{ friend.name }}</h2>
+    <p class="hint">Dit gereedschap combineert goed met wat {{ friend.name }} nu leent of heeft aangevraagd:</p>
+    <table>
+        <thead>
+            <tr><th>Bij dit gereedschap</th><th>Combi-gereedschap</th><th>Eigenaar</th><th>Actie</th></tr>
+        </thead>
+        <tbody>
+            {% for s in combi_suggestions %}
+            <tr>
+                <td>{{ s.primary_tool_name }}</td>
+                <td>{{ s.name }}{% if s.brand or s.model %} <span class="meta">({{ [s.brand, s.model] | select | join(' ') }})</span>{% endif %}</td>
+                <td>{{ s.owner_name }}</td>
+                <td>
+                    <form method="post" class="inline">
+                        <input type="hidden" name="action" value="request">
+                        <input type="hidden" name="borrower_id" value="{{ friend.id }}">
+                        <input type="hidden" name="tool_id" value="{{ s.id }}">
+                        <button type="submit">Ook lenen</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endif %}
+
 <section>
     <h2>Mijn gereedschap (van {{ friend.name }})</h2>
     {% if friend_tools %}

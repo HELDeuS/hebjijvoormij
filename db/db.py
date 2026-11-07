@@ -263,6 +263,37 @@ def get_linked_tools_map(tool_ids):
     return links
 
 
+def get_combi_suggestions(friend_id):
+    """Geeft per openstaande lening van een vriend het beschikbare, gekoppelde
+    gereedschap terug dat nog niet door die vriend is aangevraagd of geleend."""
+    with Database() as db:
+        return db._query(
+            """
+            SELECT DISTINCT lt.id, lt.name, lt.brand, lt.model,
+                   f.name AS owner_name,
+                   pt.id AS primary_tool_id, pt.name AS primary_tool_name,
+                   l.status AS primary_loan_status
+            FROM loans l
+            JOIN tools pt ON pt.id = l.tool_id
+            JOIN tool_links tl ON tl.tool_id = pt.id
+            JOIN tools lt ON lt.id = tl.linked_tool_id
+            JOIN friends f ON f.id = lt.owner_id
+            LEFT JOIN loans l2 ON l2.tool_id = lt.id
+                 AND l2.status IN ('aangevraagd', 'uitgeleend')
+            LEFT JOIN loans l3 ON l3.tool_id = lt.id
+                 AND l3.borrower_id = l.borrower_id
+                 AND l3.status IN ('aangevraagd', 'uitgeleend')
+            WHERE l.borrower_id = %s
+              AND l.status IN ('aangevraagd', 'uitgeleend')
+              AND l2.id IS NULL
+              AND l3.id IS NULL
+              AND lt.owner_id <> l.borrower_id
+            ORDER BY pt.name, lt.name
+            """,
+            (friend_id,),
+        )
+
+
 def get_friend_transactions(friend_id):
     with Database() as db:
         return db._query(

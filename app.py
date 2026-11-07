@@ -10,6 +10,7 @@ from db.db import (
     create_loan_request,
     get_friend,
     get_friend_stats,
+    get_combi_suggestions,
     get_friend_tools,
     get_friend_transactions,
     get_linked_tools_map,
@@ -193,6 +194,15 @@ def loans():
                     flash("Je kunt niet je eigen gereedschap lenen.", "error")
                 elif create_loan_request(tool_id, borrower_id):
                     flash("Leenverzoek aangemaakt.", "success")
+                    suggestions = get_combi_suggestions(borrower_id)
+                    relevant = [s for s in suggestions if s["primary_tool_id"] == tool_id]
+                    if relevant:
+                        names = ", ".join(s["name"] for s in relevant)
+                        flash(
+                            f"Tip: goed te combineren met {names} — "
+                            "kijk bij de combi-suggesties om ze mee te lenen.",
+                            "warning",
+                        )
                 else:
                     flash("Dit gereedschap is momenteel niet beschikbaar.", "error")
             return redirect(url_for("loans", friend_id=borrower_id))
@@ -221,6 +231,9 @@ def loans():
         available_tools=get_tools(available_only=True),
         friend_tools=get_friend_tools(friend["id"] if friend else None),
         transactions=get_friend_transactions(friend["id"] if friend else None),
+        combi_suggestions=get_combi_suggestions(friend["id"])
+        if friend
+        else [],
     )
 
 
