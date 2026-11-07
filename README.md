@@ -121,6 +121,16 @@ EXIT;
 ```bash
 sudo adduser --system --group --home /opt/hebjijvoormij hebjijvoormij
 sudo -u hebjijvoormij git clone https://github.com/HELDeuS/hebjijvoormij.git /opt/hebjijvoormij/app
+```
+
+Bestaat de map al (herinstallatie of update vóór de eerste start), werk de
+code dan bij in plaats van opnieuw te klonen:
+
+```bash
+sudo -u hebjijvoormij git -C /opt/hebjijvoormij/app pull
+```
+
+```bash
 cd /opt/hebjijvoormij/app
 sudo -u hebjijvoormij python3 -m venv venv
 sudo -u hebjijvoormij venv/bin/pip install -r requirements.txt
