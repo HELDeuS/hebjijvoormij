@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Uitleningen - hebjijvoormij{% endblock %}
+{% block content %}
+<section>
+    <h2>Leenverzoek aanmaken</h2>
+    <form method="post">
+        <input type="hidden" name="action" value="request">
+        <label>Lener*
+            <select name="borrower_id" required>
+                <option value="">— kies een vriend —</option>
+                {% for f in friends %}
+                <option value="{{ f.id }}" {% if friend and friend.id == f.id %}selected{% endif %}>{{ f.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Gereedschap*
+            <select name="tool_id" required>
+                <option value="">— kies gereedschap —</option>
+                {% for tool in available_tools %}
+                <option value="{{ tool.id }}">{{ tool.name }} (van {{ tool.owner_name }})</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit">Verzoek aanmaken</button>
+    </form>
+</section>
+
+{% if friend %}
+<section>
+    <h2>Mijn gereedschap (van {{ friend.name }})</h2>
+    {% if friend_tools %}
+    <table>
+        <thead>
+            <tr><th>Naam</th><th>Status</th><th>Lener</th><th>Actie</th></tr>
+        </thead>
+        <tbody>
+            {% for tool in friend_tools %}
+            <tr>
+                <td>{{ tool.name }}</td>
+                <td>
+                    {% if tool.loan_id %}
+                    <span class="status {{ tool.loan_status }}">{{ STATUS_LABELS[tool.loan_status] }}</span>
+                    {% else %}
+                    <span class="status beschikbaar">Beschikbaar</span>
+                    {% endif %}
+                </td>
+                <td>{{ tool.borrower_name or "-" }}</td>
+                <td>
+                    {% if tool.loan_id and tool.loan_status == 'aangevraagd' %}
+                    <form method="post" class="inline">
+                        <input type="hidden" name="action" value="approve">
+                        <input type="hidden" name="loan_id" value="{{ tool.loan_id }}">
+                        <input type="hidden" name="friend_id" value="{{ friend.id }}">
+                        <button type="submit" class="approve">Goedkeuren</button>
+                    </form>
+                    <form method="post" class="inline">
+                        <input type="hidden" name="action" value="reject">
+                        <input type="hidden" name="loan_id" value="{{ tool.loan_id }}">
+                        <input type="hidden" name="friend_id" value="{{ friend.id }}">
+                        <button type="submit" class="reject">Weigeren</button>
+                    </form>
+                    {% elif tool.loan_id and tool.loan_status == 'uitgeleend' %}
+                    <form method="post" class="inline">
+                        <input type="hidden" name="action" value="return">
+                        <input type="hidden" name="loan_id" value="{{ tool.loan_id }}">
+                        <input type="hidden" name="friend_id" value="{{ friend.id }}">
+                        <button type="submit" class="return">Terugontvangen</button>
+                    </form>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>{{ friend.name }} heeft nog geen gereedschap geregistreerd.</p>
+    {% endif %}
+</section>
+
+<section>
+    <h2>Transacties van {{ friend.name }}</h2>
+    {% if transactions %}
+    <table>
+        <thead>
+            <tr><th>Gereedschap</th><th>Van</th><th>Aan</th><th>Status</th><th>Uitgeleend op</th><th>Terug op</th></tr>
+        </thead>
+        <tbody>
+            {% for loan in transactions %}
+            <tr>
+                <td>{{ loan.tool_name }}</td>
+                <td>{{ loan.owner_name }}</td>
+                <td>{{ loan.borrower_name }}</td>
+                <td><span class="status {{ loan.status }}">{{ STATUS_LABELS[loan.status] }}</span></td>
+                <td>{{ loan.lent_at or "-" }}</td>
+                <td>{{ loan.returned_at or "-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Nog geen transacties.</p>
+    {% endif %}
+</section>
+{% else %}
+<p>Kies hierboven een vriend om zijn of haar uitleningen en verzoeken te zien en te beheren.</p>
+{% endif %}
+{% endblock %}

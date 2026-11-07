@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}hebjijvoormij{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+    <h1>🔧 hebjijvoormij</h1>
+    <nav>
+        <a href="{{ url_for('index') }}">Overzicht</a>
+        <a href="{{ url_for('friends') }}">Vrienden</a>
+        <a href="{{ url_for('tools') }}">Gereedschap</a>
+        <a href="{{ url_for('loans') }}">Uitleningen</a>
+    </nav>
+    <form method="get" action="{{ request.path }}" class="friend-picker">
+        <label for="friend_id">Actieve vriend:</label>
+        <select name="friend_id" onchange="this.form.submit()">
+            <option value="">— kies een vriend —</option>
+            {% for f in friends %}
+            <option value="{{ f.id }}" {% if friend and friend.id == f.id %}selected{% endif %}>{{ f.name }}</option>
+            {% endfor %}
+        </select>
+        <noscript><button type="submit">Kies</button></noscript>
+    </form>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer>
+    <p>Gereedschap van vrienden, voor vrienden.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Vrienden - hebjijvoormij{% endblock %}
+{% block content %}
+<section>
+    <h2>Nieuwe vriend registreren</h2>
+    <form method="post">
+        <label>Naam* <input type="text" name="name" required></label>
+        <label>E-mail <input type="email" name="email"></label>
+        <label>Telefoon <input type="tel" name="phone"></label>
+        <button type="submit">Registreren</button>
+    </form>
+</section>
+
+<section>
+    <h2>Geregistreerde vrienden</h2>
+    {% if friends_list %}
+    <table>
+        <thead>
+            <tr><th>Naam</th><th>E-mail</th><th>Telefoon</th><th>Sinds</th></tr>
+        </thead>
+        <tbody>
+            {% for f in friends_list %}
+            <tr>
+                <td>{{ f.name }}</td>
+                <td>{{ f.email or "-" }}</td>
+                <td>{{ f.phone or "-" }}</td>
+                <td>{{ f.created_at.strftime("%d-%m-%Y") }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Nog geen vrienden geregistreerd.</p>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Overzicht - hebjijvoormij{% endblock %}
+{% block content %}
+<section>
+    <h2>Openstaande uitleningen en verzoeken</h2>
+    {% if overview %}
+    <table>
+        <thead>
+            <tr><th>Gereedschap</th><th>Eigenaar</th><th>Lener</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            {% for loan in overview %}
+            <tr>
+                <td>{{ loan.tool_name }}</td>
+                <td>{{ loan.owner_name }}</td>
+                <td>{{ loan.borrower_name }}</td>
+                <td><span class="status {{ loan.status }}">{{ STATUS_LABELS[loan.status] }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Er zijn momenteel geen openstaande uitleningen. 🎉</p>
+    {% endif %}
+</section>
+
+<section>
+    <h2>Per vriend</h2>
+    {% if stats %}
+    <table>
+        <thead>
+            <tr><th>Vriend</th><th>Gereedschappen</th><th>Uitgeleend</th><th>Openstaande verzoeken</th></tr>
+        </thead>
+        <tbody>
+            {% for s in stats %}
+            <tr>
+                <td><a href="{{ url_for('index', friend_id=s.id) }}">{{ s.name }}</a></td>
+                <td>{{ s.tool_count }}</td>
+                <td>{{ s.active_lent }}</td>
+                <td>{{ s.pending_requests }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Nog geen vrienden geregistreerd. <a href="{{ url_for('friends') }}">Voeg vrienden toe</a>.</p>
+    {% endif %}
+</section>
+{% endblock %}

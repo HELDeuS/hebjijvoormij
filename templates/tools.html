@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Gereedschap - hebjijvoormij{% endblock %}
+{% block content %}
+<section>
+    <h2>Gereedschap registreren</h2>
+    <form method="post">
+        <label>Eigenaar*
+            <select name="owner_id" required>
+                <option value="">— kies een vriend —</option>
+                {% for f in friends %}
+                <option value="{{ f.id }}" {% if friend and friend.id == f.id %}selected{% endif %}>{{ f.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Naam* <input type="text" name="name" required></label>
+        <label>Omschrijving <input type="text" name="description"></label>
+        <label>Categorie <input type="text" name="category" placeholder="bv. elektra, tuin, klussen"></label>
+        <button type="submit">Registreren</button>
+    </form>
+</section>
+
+<section>
+    <h2>{% if friend %}Gereedschap van {{ friend.name }}{% else %}Volledige catalogus{% endif %}</h2>
+    {% if tools_list %}
+    <table>
+        <thead>
+            <tr><th>Naam</th><th>Omschrijving</th><th>Categorie</th><th>Eigenaar</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            {% for tool in tools_list %}
+            <tr>
+                <td>{{ tool.name }}</td>
+                <td>{{ tool.description or "-" }}</td>
+                <td>{{ tool.category or "-" }}</td>
+                <td>{{ tool.owner_name }}</td>
+                <td>
+                    {% if tool.active_loan_id %}
+                    <span class="status {{ tool.loan_status }}">{{ STATUS_LABELS[tool.loan_status] }}</span>
+                    {% else %}
+                    <span class="status beschikbaar">Beschikbaar</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Nog geen gereedschap geregistreerd.</p>
+    {% endif %}
+</section>
+{% endblock %}

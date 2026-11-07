@@ -1,0 +1,155 @@
+import os
+
+from flask import Flask, flash, redirect, render_template, request, url_for
+from db.db import (
+    Database,
+    add_friend,
+    add_tool,
+    approve_loan,
+    create_loan_request,
+    get_friend,
+    get_friend_stats,
+    get_friend_tools,
+    get_friend_transactions,
+    get_overview,
+    get_tool,
+    get_tools,
+    init_db,
+    reject_loan,
+    return_loan,
+)
+
+app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "dev-key-verander-dit")
+
+STATUS_LABELS = {
+    "aangevraagd": "Aangevraagd",
+    "uitgeleend": "Uitgeleend",
+    "teruggekeerd": "Teruggekeerd",
+    "geweigerd": "Geweigerd",
+}
+
+app.jinja_env.globals.update(STATUS_LABELS=STATUS_LABELS)
+
+
+@app.context_processor
+def inject_globals():
+    friend_id = request.args.get("friend_id", type=int)
+    friend = get_friend(friend_id) if friend_id else None
+    return {"friends": Database().get_friends(), "friend": friend}
+
+
+def _selected_friend():
+    friend_id = request.args.get("friend_id", type=int)
+    if friend_id:
+        friend = get_friend(friend_id)
+        if friend:
+            return friend
+    return None
+
+
+@app.route("/")
+def index():
+    friend = _selected_friend()
+    return render_template(
+        "index.html",
+        friend=friend,
+        overview=get_overview(),
+        stats=get_friend_stats(),
+    )
+
+
+@app.route("/friends", methods=["GET", "POST"])
+def friends():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        phone = request.form.get("phone", "").strip()
+        if not name:
+            flash("Naam is verplicht.", "error")
+        elif add_friend(name, email, phone):
+            flash(f"Vriend {name} is geregistreerd.", "success")
+        else:
+            flash("Deze vriend bestaat al.", "error")
+        return redirect(url_for("friends"))
+    return render_template("friends.html", friends_list=Database().get_friends())
+
+
+@app.route("/tools", methods=["GET", "POST"])
+def tools():
+    friend = _selected_friend()
+    if request.method == "POST":
+        owner_id = request.form.get("owner_id", type=int)
+        name = request.form.get("name", "").strip()
+        description = request.form.get("description", "").strip()
+        category = request.form.get("category", "").strip()
+        if not owner_id or not name:
+            flash("Eigenaar en naam zijn verplicht.", "error")
+        elif add_tool(owner_id, name, description, category):
+            flash(f"Gereedschap '{name}' is geregistreerd.", "success")
+        else:
+            flash("Dit gereedschap bestaat al.", "error")
+        return redirect(url_for("tools", friend_id=owner_id))
+    return render_template(
+        "tools.html",
+        friend=friend,
+        tools_list=get_tools(friend["id"] if friend else None),
+    )
+
+
+@app.route("/loans", methods=["GET", "POST"])
+def loans():
+    friend = _selected_friend()
+    if request.method == "POST":
+        action = request.form.get("action")
+        tool_id = request.form.get("tool_id", type=int)
+        if action == "request":
+            borrower_id = request.form.get("borrower_id", type=int)
+            if not tool_id or not borrower_id:
+                flash("Kies een vriend en een gereedschap.", "error")
+            else:
+                tool = get_tool(tool_id)
+                if tool and tool["owner_id"] == borrower_id:
+                    flash("Je kunt niet je eigen gereedschap lenen.", "error")
+                elif create_loan_request(tool_id, borrower_id):
+                    flash("Leenverzoek aangemaakt.", "success")
+                else:
+                    flash("Dit gereedschap is momenteel niet beschikbaar.", "error")
+            return redirect(url_for("loans", friend_id=borrower_id))
+        if action in ("approve", "reject", "return"):
+            loan_id = request.form.get("loan_id", type=int)
+            handler = {
+                "approve": approve_loan,
+                "reject": reject_loan,
+                "return": return_loan,
+            }[action]
+            if loan_id and handler(loan_id):
+                flash(
+                    {
+                        "approve": "Uitlening goedgekeurd.",
+                        "reject": "Leenverzoek geweigerd.",
+                        "return": "Gereedschap is teruggekeerd.",
+                    }[action],
+                    "success",
+                )
+            else:
+                flash("Actie niet mogelijk.", "error")
+            return redirect(url_for("loans", friend_id=request.form.get("friend_id")))
+    return render_template(
+        "loans.html",
+        friend=friend,
+        available_tools=get_tools(available_only=True),
+        friend_tools=get_friend_tools(friend["id"] if friend else None),
+        transactions=get_friend_transactions(friend["id"] if friend else None),
+    )
+
+
+@app.cli.command("init-db")
+def init_db_command():
+    init_db()
+    print("Database geïnitialiseerd.")
+
+
+if __name__ == "__main__":
+    init_db()
+    app.run(host="127.0.0.1", port=5000, debug=True)
