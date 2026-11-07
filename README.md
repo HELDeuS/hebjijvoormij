@@ -310,7 +310,37 @@ automatisch toegevoegd aan de database (migraties).
 sudo systemctl start hebjijvoormij
 ```
 
-### 9. Back-up
+### 9. Problemen met de beheerder
+
+Wordt de beheerder niet herkend, controleer dan in deze volgorde:
+
+1. **Service herstarten** — systemd leest de `.env` alleen bij het starten:
+   `sudo systemctl restart hebjijvoormij`.
+2. **Diagnose draaien**:
+   ```bash
+   cd /opt/hebjijvoormij/app
+   sudo -u hebjijvoormij bash -c 'set -a; source .env; set +a; venv/bin/flask --app app ensure-admin'
+   ```
+   Het commando meldt of de beheerder bestaat, of het wachtwoord al is
+   ingesteld, en wat er mis is met de database.
+3. **Bestaande beheerder wordt niet gewijzigd** — heeft de app ooit eerder
+   gedraaid, dan bestaat de beheerder al met de toen geldige gegevens;
+   een latere wijziging van `ADMIN_NAME`/`ADMIN_PASSWORD` in de `.env`
+   heeft dan geen effect. Zet het wachtwoord opnieuw via de app, of
+   verwijder de beheerder en draai `ensure-admin` opnieuw:
+   ```sql
+   DELETE FROM friends WHERE is_admin = 1;
+   ```
+4. **Kolommen ontbreken** (kan als de automatische migratie niet kon
+   draaien) — voer het schema opnieuw uit; bestaande tabellen worden
+   met rust gelaten:
+   ```bash
+   sudo mariadb gereedschap_leensysteem < /opt/hebjijvoormij/app/db/schema.sql
+   ```
+5. **Logs bekijken**: `journalctl -u hebjijvoormij -f` — fouten bij het
+   aanmaken van de beheerder worden hier gelogd.
+
+### 10. Back-up
 
 ```bash
 sudo mariadb-dump gereedschap_leensysteem | gzip > backup-$(date +%F).sql.gz

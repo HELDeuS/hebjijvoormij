@@ -84,8 +84,12 @@ def login():
         return redirect(url_for("index"))
     try:
         ensure_admin()
-    except Exception:
-        pass
+    except Exception as exc:
+        app.logger.warning(
+            "Beheerder kon niet worden aangemaakt/controleerd: %s. "
+            "Draai 'venv/bin/flask --app app ensure-admin' voor diagnostiek.",
+            exc,
+        )
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         password = request.form.get("password", "")
@@ -327,6 +331,42 @@ def loans():
 def init_db_command():
     init_db()
     print("Database geïnitialiseerd.")
+
+
+@app.cli.command("ensure-admin")
+def ensure_admin_command():
+    """Controleert de beheerder en maakt deze indien nodig aan."""
+    from db.db import get_friend_by_name
+
+    name = os.environ.get("ADMIN_NAME", "admin")
+    try:
+        ensure_admin()
+    except Exception as exc:
+        print(f"FOUT: beheerder kon niet worden aangemaakt: {exc}")
+        print(
+            "Controleer of de database en tabellen bestaan:\n"
+            "  sudo mariadb gereedschap_leensysteem < db/schema.sql"
+        )
+        return 1
+    admin = get_friend_by_name(name)
+    if admin and admin["is_admin"]:
+        state = (
+            "moet nog een wachtwoord kiezen bij de eerste login"
+            if admin["must_change_password"]
+            else "wachtwoord al ingesteld"
+        )
+        print(f"Beheerder '{name}' aanwezig (id={admin['id']}); {state}.")
+        print(
+            "Bestaande beheerders worden nooit automatisch gewijzigd; "
+            "wijzig het admin-wachtwoord via de app of de database."
+        )
+    else:
+        print(f"Geen beheerder gevonden onder de naam '{name}'.")
+        print(
+            "Bestaat er al een beheerder onder een andere naam? "
+            "Dan wordt ADMIN_NAME genegeerd; pas de naam in de database aan "
+            "of verwijder die beheerder en draai dit commando opnieuw."
+        )
 
 
 if __name__ == "__main__":
