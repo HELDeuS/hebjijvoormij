@@ -48,6 +48,9 @@ gereedschap uitleensysteem
    export DB_USER_ROOT=root
    export DB_PASSWORD_ROOT=<jouw root-wachtwoord>
    export SECRET_KEY=<iets-geheims>
+   export FLASK_HOST=127.0.0.1
+   export FLASK_PORT=5000
+   export FLASK_DEBUG=0
    ```
 
 4. **Installeren en starten**:
@@ -216,7 +219,19 @@ WantedBy=multi-user.target
 ```
 
 De app luistert standaard alleen op `127.0.0.1`; de systemd-service draait
-de app dus uitsluitend lokaal. Activeer en start de service:
+de app dus uitsluitend lokaal. Wil je de app rechtstreeks op het netwerk
+bereikbaar maken (zonder nginx), zet dan in de `.env`:
+
+```
+FLASK_HOST=0.0.0.0
+FLASK_DEBUG=0
+```
+
+en open poort 5000 in de firewall (bij voorkeur alleen voor vertrouwde
+netwerken): `sudo ufw allow from 192.168.1.0/24 to any port 5000 tcp`.
+Zet `FLASK_DEBUG` nooit op 1 als de app buiten localhost bereikbaar is.
+
+Activeer en start de service:
 
 ```bash
 sudo systemctl daemon-reload
