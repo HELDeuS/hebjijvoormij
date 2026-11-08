@@ -588,6 +588,35 @@ def _can_manage(tool):
     return bool(friend and (friend["is_admin"] or tool["owner_id"] == friend["id"]))
 
 
+@app.route("/tools/<int:tool_id>")
+@login_required
+def tool_detail(tool_id):
+    me = g.friend
+    tool = get_tool(tool_id)
+    if not tool:
+        flash("Gereedschap niet gevonden.", "error")
+        return redirect(url_for("tools"))
+    visible = get_visible_tools(me["id"])
+    if not (me["is_admin"] or tool["owner_id"] == me["id"]
+            or any(t["id"] == tool_id for t in visible)):
+        flash(
+            "Dit gereedschap is niet beschikbaar binnen jouw vriendenkringen.",
+            "error",
+        )
+        return redirect(url_for("tools"))
+    links = get_linked_tools_map([tool_id]).get(tool_id, [])
+    available = not tool["active_loan_id"]
+    owner = get_friend(tool["owner_id"])
+    return render_template(
+        "tool_detail.html",
+        tool=tool,
+        owner=owner,
+        links=links,
+        available=available,
+        is_own=tool["owner_id"] == me["id"],
+    )
+
+
 @app.route("/tools/<int:tool_id>/edit", methods=["GET", "POST"])
 @login_required
 def tool_edit(tool_id):

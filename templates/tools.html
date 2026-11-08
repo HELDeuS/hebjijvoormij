@@ -50,7 +50,7 @@
         <tbody>
             {% for tool in tools_list %}
             <tr>
-                <td>{{ tool.name }}</td>
+                <td><a href="{{ url_for('tool_detail', tool_id=tool.id) }}" class="tool-title-link">{{ tool.name }}</a></td>
                 <td>{{ tool.category or "-" }}</td>
                 <td>{{ tool.brand or "-" }}</td>
                 <td>{{ tool.owner_name }}</td>
@@ -75,14 +75,16 @@
         {% for tool in tools_list %}
         <article class="tool-card">
             <div class="tool-image">
+                <a href="{{ url_for('tool_detail', tool_id=tool.id) }}">
                 {% if tool.image_path %}
                 <img src="{{ url_for('static', filename=tool.image_path) }}" alt="{{ tool.name }}">
                 {% else %}
                 <span class="no-image">🔧</span>
                 {% endif %}
+                </a>
             </div>
             <div class="tool-body">
-                <h3>{{ tool.name }}</h3>
+                <h3><a href="{{ url_for('tool_detail', tool_id=tool.id) }}" class="tool-title-link">{{ tool.name }}</a></h3>
                 <p class="meta">
                     {% if tool.brand or tool.model %}
                     {{ [tool.brand, tool.model] | select | join(' ') }}<br>

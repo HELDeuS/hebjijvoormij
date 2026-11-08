@@ -15,9 +15,10 @@ gereedschap uitleensysteem
   of als sorteerbare lijst (Soort, Categorie, Merk, Eigenaar, Status);
   de voorkeur wordt per gebruiker onthouden. Bij Categorie en Merk
   kun je vrij typen of eerder gebruikte waardes kiezen.
-  Gereedschap is achteraf aan te passen of te verwijderen via
-  'Aanpassen' en 'Verwijderen' - alleen door de eigenaar of de
-  beheerder. Verwijderen is geblokkeerd zolang het gereedschap is
+  Klik op een kaart of naam voor een detailpagina met alle informatie
+  en een knop om direct een uitlening aan te vragen. Gereedschap is
+  achteraf aan te passen of te verwijderen via 'Aanpassen' en
+  'Verwijderen' - alleen door de eigenaar of de beheerder. Verwijderen is geblokkeerd zolang het gereedschap is
   uitgeleend of aangevraagd.
   Zijn merk en type bekend, dan wordt er automatisch een plaatje
   opgezocht en op de gereedschapskaart getoond. Werkt het automatisch

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ tool.name }} - hebjijvoormij{% endblock %}
+{% block content %}
+<section class="tool-detail">
+    <div class="tool-detail-image">
+        {% if tool.image_path %}
+        <img src="{{ url_for('static', filename=tool.image_path) }}" alt="{{ tool.name }}">
+        {% else %}
+        <span class="no-image">🔧</span>
+        {% endif %}
+    </div>
+    <div class="tool-detail-body">
+        <h2>{{ tool.name }}</h2>
+        <p class="meta">
+            {% if tool.brand or tool.model %}
+            <strong>{{ [tool.brand, tool.model] | select | join(' ') }}</strong><br>
+            {% endif %}
+            Eigenaar: <strong>{{ owner.name }}</strong>
+        </p>
+        {% if tool.description %}<p>{{ tool.description }}</p>{% endif %}
+        {% if tool.category %}<p class="meta">Categorie: {{ tool.category }}</p>{% endif %}
+        <p>
+            {% if tool.active_loan_id %}
+            <span class="status {{ tool.loan_status }}">{{ STATUS_LABELS[tool.loan_status] }}</span>
+            {% else %}
+            <span class="status beschikbaar">Beschikbaar</span>
+            {% endif %}
+        </p>
+
+        {% if is_own %}
+        <p class="hint">Dit is je eigen gereedschap; je kunt het niet van jezelf lenen.</p>
+        {% elif available %}
+        <form method="post" action="{{ url_for('loans') }}">
+            <input type="hidden" name="action" value="request">
+            <input type="hidden" name="tool_id" value="{{ tool.id }}">
+            <button type="submit">Uitlening aanvragen</button>
+        </form>
+        {% else %}
+        <p class="hint">Dit gereedschap is momenteel niet beschikbaar.</p>
+        {% endif %}
+
+        <p><a href="{{ url_for('tools') }}" class="hint">← Terug naar de catalogus</a></p>
+    </div>
+</section>
+
+{% if links %}
+<section>
+    <h2>Goed te combineren met</h2>
+    <ul class="member-list">
+        {% for link in links %}
+        <li>
+            <a href="{{ url_for('tool_detail', tool_id=link.linked_id) }}">{{ link.linked_name }}</a>
+            <span class="meta">({{ link.linked_owner }}{% if link.linked_brand or link.linked_model %}, {{ [link.linked_brand, link.linked_model] | select | join(' ') }}{% endif %})</span>
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+{% endblock %}
