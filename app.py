@@ -327,6 +327,12 @@ def tool_link(tool_id):
     if not tool:
         flash("Gereedschap niet gevonden.", "error")
         return redirect(url_for("tools"))
+    if not _can_manage(tool):
+        flash(
+            "Alleen de eigenaar of de beheerder kan dit gereedschap koppelen.",
+            "error",
+        )
+        return redirect(url_for("tools"))
     if request.form.get("action") == "remove":
         if linked_id:
             remove_tool_link(tool_id, linked_id)
@@ -337,6 +343,12 @@ def tool_link(tool_id):
             flash("Kies een gereedschap om te koppelen.", "error")
         elif linked["id"] == tool["id"]:
             flash("Een gereedschap kan niet met zichzelf gekoppeld worden.", "error")
+        elif linked["owner_id"] != tool["owner_id"]:
+            flash(
+                "Gereedschap kan alleen gekoppeld worden aan ander gereedschap "
+                "van dezelfde eigenaar.",
+                "error",
+            )
         elif add_tool_link(tool_id, linked_id):
             flash(f"'{tool['name']}' is gekoppeld aan '{linked['name']}'.", "success")
         else:

@@ -100,28 +100,32 @@
                         <li>
                             {{ link.linked_name }}
                             <span class="meta">({{ link.linked_owner }}{% if link.linked_brand or link.linked_model %}, {{ [link.linked_brand, link.linked_model] | select | join(' ') }}{% endif %})</span>
+                            {% if friend and (friend.is_admin or tool.owner_id == friend.id) %}
                             <form method="post" action="{{ url_for('tool_link', tool_id=tool.id) }}" class="inline">
                                 <input type="hidden" name="action" value="remove">
                                 <input type="hidden" name="linked_tool_id" value="{{ link.linked_id }}">
                                 <button type="submit" class="link-remove" title="Koppeling verwijderen">✕</button>
                             </form>
+                            {% endif %}
                         </li>
                         {% endfor %}
                     </ul>
                     {% else %}
                     <p class="meta">Nog geen koppelingen.</p>
                     {% endif %}
+                    {% if friend and (friend.is_admin or tool.owner_id == friend.id) %}
                     <form method="post" action="{{ url_for('tool_link', tool_id=tool.id) }}" class="inline link-add">
                         <select name="linked_tool_id" required>
                             <option value="">— kies gereedschap —</option>
                             {% for other in all_tools %}
-                            {% if other.id != tool.id %}
-                            <option value="{{ other.id }}">{{ other.name }} ({{ other.owner_name }})</option>
+                            {% if other.id != tool.id and other.owner_id == tool.owner_id %}
+                            <option value="{{ other.id }}">{{ other.name }}{% if other.brand or other.model %} ({{ [other.brand, other.model] | select | join(' ') }}){% endif %}</option>
                             {% endif %}
                             {% endfor %}
                         </select>
                         <button type="submit">Koppelen</button>
                     </form>
+                    {% endif %}
                 </div>
                 <p>
                     {% if tool.active_loan_id %}

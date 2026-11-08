@@ -21,7 +21,9 @@ gereedschap uitleensysteem
   max. 5 MB).
 - **Combi-gereedschap** – koppel bijbehorend gereedschap aan elkaar
   (bv. speciale boren bij een boormachine); op de kaart terug te
-  vinden onder "Goed te combineren met". Bij een leenverzoek
+  vinden onder "Goed te combineren met". Koppelen kan alleen met
+  gereedschap van dezelfde eigenaar, door de eigenaar of de
+  beheerder. Bij een leenverzoek
   verschijnt er bovendien een tip en een paneel met combi-suggesties om
   bijbehorend gereedschap direct mee te lenen.
 - **Uitleningen met status** – leenverzoeken doorlopen de statuscyclus
