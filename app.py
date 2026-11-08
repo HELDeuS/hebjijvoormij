@@ -31,6 +31,7 @@ from db.db import (
     get_tool,
     get_tools,
     ensure_admin,
+    ensure_schema,
     init_db,
     remove_tool_image,
     remove_tool_link,
@@ -83,10 +84,11 @@ def login():
     if g.friend:
         return redirect(url_for("index"))
     try:
+        ensure_schema()
         ensure_admin()
     except Exception as exc:
         app.logger.warning(
-            "Beheerder kon niet worden aangemaakt/controleerd: %s. "
+            "Database-schema of beheerder kon niet worden gecontroleerd: %s. "
             "Draai 'venv/bin/flask --app app ensure-admin' voor diagnostiek.",
             exc,
         )
@@ -340,12 +342,13 @@ def ensure_admin_command():
 
     name = os.environ.get("ADMIN_NAME", "admin")
     try:
+        ensure_schema()
         ensure_admin()
     except Exception as exc:
-        print(f"FOUT: beheerder kon niet worden aangemaakt: {exc}")
+        print(f"FOUT: schema of beheerder kon niet worden gecontroleerd: {exc}")
         print(
-            "Controleer of de database en tabellen bestaan:\n"
-            "  sudo mariadb gereedschap_leensysteem < db/schema.sql"
+            "Controleer of de database bestaat en of de databasegegevens in de "
+            ".env kloppen (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)."
         )
         return 1
     admin = get_friend_by_name(name)
@@ -372,6 +375,7 @@ def ensure_admin_command():
 if __name__ == "__main__":
     try:
         init_db()
+        ensure_schema()
         ensure_admin()
     except Exception as exc:
         print(

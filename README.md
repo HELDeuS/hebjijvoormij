@@ -362,12 +362,17 @@ Wordt de beheerder niet herkend, controleer dan in deze volgorde:
    ```sql
    DELETE FROM friends WHERE is_admin = 1;
    ```
-4. **Kolommen ontbreken** (kan als de automatische migratie niet kon
-   draaien) — voer het schema opnieuw uit; bestaande tabellen worden
-   met rust gelaten:
+4. **Kolommen of het admin-account ontbreken** — de app herstelt dit
+   tegenwoordig zelf: bij elke start (en bij een bezoek aan de
+   loginpagina) voert ze het schema uit met de gewone databasegebruiker,
+   voegt ze ontbrekende kolommen toe aan bestaande tabellen en zet ze
+   het standaard admin-account in de database (`INSERT IGNORE`, dus
+   nooit duplicaten). Handmatig kan dit ook:
    ```bash
    sudo mariadb gereedschap_leensysteem < /opt/hebjijvoormij/app/db/schema.sql
    ```
+   Het schema bevat het standaard admin-account (`admin` / `beheer123`,
+   met verplichte wachtwoordwijziging bij de eerste login).
 5. **Logs bekijken**: `journalctl -u hebjijvoormij -f` — fouten bij het
    aanmaken van de beheerder worden hier gelogd.
 

@@ -115,6 +115,52 @@ def _migrate(cur):
             cur.execute(statement)
 
 
+def ensure_schema():
+    """Zet het databaseschema recht met de gewone app-gebruiker (die alle
+    rechten heeft op de database): voert schema.sql uit en voegt ontbrekende
+    kolommen toe aan bestaande tabellen. Werkt dus ook als de automatische
+    migratie via de root-verbinding niet kon draaien (unix-socket-auth)."""
+    with Database() as db:
+        with open(os.path.join(os.path.dirname(__file__), "schema.sql")) as f:
+            for statement in f.read().split(";"):
+                if statement.strip():
+                    db._execute(statement)
+        existing = {
+            row["COLUMN_NAME"]
+            for row in db._query(
+                "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+                "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'friends'",
+                (DB_CONFIG["database"],),
+            )
+        }
+        migrations = {
+            "password_hash": "ALTER TABLE friends ADD COLUMN password_hash VARCHAR(255)",
+            "is_admin": "ALTER TABLE friends ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0",
+            "must_change_password": (
+                "ALTER TABLE friends ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0"
+            ),
+        }
+        for column, statement in migrations.items():
+            if column not in existing:
+                db._execute(statement)
+        tool_columns = {
+            row["COLUMN_NAME"]
+            for row in db._query(
+                "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+                "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'tools'",
+                (DB_CONFIG["database"],),
+            )
+        }
+        tool_migrations = {
+            "brand": "ALTER TABLE tools ADD COLUMN brand VARCHAR(100)",
+            "model": "ALTER TABLE tools ADD COLUMN model VARCHAR(100)",
+            "image_path": "ALTER TABLE tools ADD COLUMN image_path VARCHAR(255)",
+        }
+        for column, statement in tool_migrations.items():
+            if column not in tool_columns:
+                db._execute(statement)
+
+
 def get_friend(friend_id):
     with Database() as db:
         rows = db._query("SELECT * FROM friends WHERE id = %s", (friend_id,))
