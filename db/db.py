@@ -126,8 +126,15 @@ def ensure_schema():
     with Database() as db:
         with open(os.path.join(os.path.dirname(__file__), "schema.sql")) as f:
             for statement in f.read().split(";"):
-                if statement.strip():
+                if not statement.strip():
+                    continue
+                try:
                     db._execute(statement)
+                except Exception as exc:
+                    print(
+                        f"ensure_schema: statement overgeslagen: {exc} "
+                        f"(statement: {statement.strip()[:60]}...)"
+                    )
         existing = {
             row["COLUMN_NAME"]
             for row in db._query(
