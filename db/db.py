@@ -758,6 +758,51 @@ def get_visible_tools(friend_id):
         )
 
 
+def get_global_stats():
+    """Totale aantallen: gereedschap, actieve gebruikers en uitleningen."""
+    with Database() as db:
+        rows = db._query(
+            """
+            SELECT
+              (SELECT COUNT(*) FROM tools) AS tool_count,
+              (SELECT COUNT(*) FROM friends WHERE status = 'actief') AS user_count,
+              (SELECT COUNT(*) FROM loans) AS loan_count
+            """
+        )
+        return rows[0] if rows else {"tool_count": 0, "user_count": 0, "loan_count": 0}
+
+
+def get_circle_stats(circle_ids=None):
+    """Statistieken per kring: leden, gereedschap van leden en uitleningen
+    van dat gereedschap. Optioneel beperkt tot de opgegeven kring-ids."""
+    with Database() as db:
+        scope = ""
+        params = ()
+        if circle_ids is not None:
+            if not circle_ids:
+                return []
+            placeholders = ",".join(["%s"] * len(circle_ids))
+            scope = f"WHERE c.id IN ({placeholders})"
+            params = tuple(circle_ids)
+        return db._query(
+            """
+            SELECT c.id, c.name,
+                   (SELECT COUNT(*) FROM circle_members x
+                    WHERE x.circle_id = c.id) AS member_count,
+                   (SELECT COUNT(*) FROM tools t
+                    WHERE t.owner_id IN (SELECT friend_id FROM circle_members x
+                                         WHERE x.circle_id = c.id)) AS tool_count,
+                   (SELECT COUNT(*) FROM loans l JOIN tools t ON t.id = l.tool_id
+                    WHERE t.owner_id IN (SELECT friend_id FROM circle_members x
+                                         WHERE x.circle_id = c.id)) AS loan_count
+            FROM circles c
+            """ + scope + """
+            ORDER BY c.name
+            """,
+            params,
+        )
+
+
 def get_friend_transactions(friend_id):
     with Database() as db:
         return db._query(

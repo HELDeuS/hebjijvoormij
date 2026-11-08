@@ -37,6 +37,9 @@ gereedschap uitleensysteem
   De beheerder kan bij het aanmaken een andere kringbeheerder kiezen
   (bv. zichzelf). Je ziet alleen gereedschap van vrienden met wie je
   een kring deelt. De beheerder kan kringen hernoemen en verwijderen.
+- **Statistieken** – algemene totalen (gereedschap, gebruikers,
+  uitleningen) voor iedereen, cijfers per eigen kring, en voor de
+  beheerder de totalen van alle kringen.
 - **Overzichten** – openstaande uitleningen en verzoeken, per-vriend statistieken,
   en een persoonlijk transactieoverzicht.
 

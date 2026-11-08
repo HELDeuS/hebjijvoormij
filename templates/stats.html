@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Statistieken - hebjijvoormij{% endblock %}
+{% block content %}
+<section>
+    <h2>Algemeen</h2>
+    <div class="stat-grid">
+        <div class="stat-card">
+            <span class="stat-number">{{ global_stats.tool_count }}</span>
+            <span class="stat-label">Stuks gereedschap</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ global_stats.user_count }}</span>
+            <span class="stat-label">Gebruikers</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ global_stats.loan_count }}</span>
+            <span class="stat-label">Uitleningen</span>
+        </div>
+    </div>
+</section>
+
+<section>
+    <h2>Mijn kringen</h2>
+    {% if my_circle_stats %}
+    <table>
+        <thead>
+            <tr><th>Kring</th><th>Leden</th><th>Gereedschap</th><th>Uitleningen</th></tr>
+        </thead>
+        <tbody>
+            {% for c in my_circle_stats %}
+            <tr>
+                <td>{{ c.name }}</td>
+                <td>{{ c.member_count }}</td>
+                <td>{{ c.tool_count }}</td>
+                <td>{{ c.loan_count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Je bent nog geen lid van een kring.</p>
+    {% endif %}
+</section>
+
+{% if friend and friend.is_admin and all_circle_stats %}
+<section>
+    <h2>Totalen per kring (beheer)</h2>
+    {% if all_circle_stats %}
+    <table>
+        <thead>
+            <tr><th>Kring</th><th>Leden</th><th>Gereedschap</th><th>Uitleningen</th></tr>
+        </thead>
+        <tbody>
+            {% for c in all_circle_stats %}
+            <tr>
+                <td>{{ c.name }}</td>
+                <td>{{ c.member_count }}</td>
+                <td>{{ c.tool_count }}</td>
+                <td>{{ c.loan_count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Er zijn nog geen kringen.</p>
+    {% endif %}
+</section>
+{% endif %}
+{% endblock %}

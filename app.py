@@ -36,8 +36,10 @@ from db.db import (
     get_friend,
     get_friend_by_email,
     get_friends,
+    get_circle_stats,
     get_friend_stats,
     get_friend_tools,
+    get_global_stats,
     get_friend_transactions,
     get_linked_tools_map,
     get_overview,
@@ -340,6 +342,21 @@ def friend_delete(friend_id):
         return redirect(url_for("login"))
     flash(f"Account van {friend['name']} is verwijderd.", "success")
     return redirect(url_for("friends"))
+
+
+@app.route("/stats")
+@login_required
+def stats():
+    me = g.friend
+    my_circles = get_circles(me["id"])
+    my_circle_stats = get_circle_stats([c["id"] for c in my_circles])
+    all_circle_stats = get_circle_stats() if me["is_admin"] else []
+    return render_template(
+        "stats.html",
+        global_stats=get_global_stats(),
+        my_circle_stats=my_circle_stats,
+        all_circle_stats=all_circle_stats,
+    )
 
 
 @app.route("/circles", methods=["GET", "POST"])
