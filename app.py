@@ -41,7 +41,7 @@ from db.db import (
     set_friend_password,
     set_tool_image,
 )
-from images import download_image, find_and_store_image, upload_image
+from images import find_and_store_image, upload_image
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-key-verander-dit")
@@ -259,14 +259,6 @@ def tool_image(tool_id):
             flash("Plaatje gevonden en toegevoegd.", "success")
         else:
             flash("Geen bruikbaar plaatje gevonden.", "warning")
-    elif action == "url":
-        image_url = request.form.get("image_url", "").strip()
-        image_path = download_image(image_url, tool_id) if image_url else None
-        if image_path:
-            set_tool_image(tool_id, image_path)
-            flash("Plaatje toegevoegd.", "success")
-        else:
-            flash("Deze afbeeldings-URL kon niet worden gedownload.", "error")
     elif action == "upload":
         image_path = upload_image(request.files.get("image_file"), tool_id)
         if image_path:

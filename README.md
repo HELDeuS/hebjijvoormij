@@ -11,7 +11,7 @@ gereedschap uitleensysteem
   Zijn merk en type bekend, dan wordt er automatisch een plaatje
   opgezocht en op de gereedschapskaart getoond. Werkt het automatisch
   zoeken niet, upload dan zelf een foto (jpg, png, webp of gif,
-  max. 5 MB) of plak een afbeeldings-URL.
+  max. 5 MB).
 - **Combi-gereedschap** – koppel bijbehorend gereedschap aan elkaar
   (bv. speciale boren bij een boormachine); op de kaart terug te
   vinden onder "Goed te combineren met". Bij een leenverzoek
