@@ -4,7 +4,8 @@ gereedschap uitleensysteem
 
 ## Functies
 
-- **Vrienden** – registreer vrienden met naam, e-mail en telefoonnummer.
+- **Vrienden** – de beheerder registreert vrienden met naam, e-mail en
+  telefoonnummer; elke vriend logt in met een eigen wachtwoord.
 - **Gereedschapscatalogus** – registreer gereedschap per eigenaar, met
   omschrijving en categorie.
   Zijn merk en type bekend, dan wordt er automatisch een plaatje
@@ -69,6 +70,8 @@ Zie `.env.example` voor een compleet voorbeeldbestand.
    export FLASK_HOST=127.0.0.1
    export FLASK_PORT=5000
    export FLASK_DEBUG=0
+   export ADMIN_NAME=admin
+   export ADMIN_PASSWORD=beheer123
    ```
 
 4. **Installeren en starten**:
@@ -102,11 +105,11 @@ Zie `.env.example` voor een compleet voorbeeldbestand.
    aanmaken.
 3. Log in met je naam en wachtwoord; alles wat je doet, gebeurt onder je
    eigen account.
-3. Registreer gereedschap onder **Gereedschap** (kies de eigenaar).
-4. Onder **Uitleningen** maak je een leenverzoek aan; de eigenaar keurt het
+4. Registreer gereedschap onder **Gereedschap** (kies de eigenaar).
+5. Onder **Uitleningen** maak je een leenverzoek aan; de eigenaar keurt het
    goed of wijst het af, en het gereedschap wordt teruggegeven via
    "Terugontvangen".
-5. Het **Overzicht** toont alle openstaande leningen en statistieken per vriend.
+6. Het **Overzicht** toont alle openstaande leningen en statistieken per vriend.
 
 ### Inloggen en beveiliging
 
@@ -387,6 +390,15 @@ Plan dit bv. dagelijks via een cron-job.
 
 ## Database-schema
 
-Zie `db/schema.sql`. Belangrijk: de tabel `loans` heeft een unieke sleutel op
-`(tool_id, active_flag)` via een virtuele kolom, zodat gereedschap nooit
-tegelijk aan twee mensen uitgeleerd kan zijn.
+Zie `db/schema.sql`. Belangrijk:
+
+- de tabel `loans` heeft een unieke sleutel op `(tool_id, active_flag)`
+  via een virtuele kolom, zodat gereedschap nooit tegelijk aan twee
+  mensen uitgeleerd kan zijn;
+- `tool_links` bevat de symmetrische koppelingen tussen gereedschappen
+  ("goed te combineren met");
+- het schema zet direct het standaard beheerdersaccount neer
+  (`admin`, met verplichte wachtwoordwijziging bij de eerste login);
+- de app voert het schema bij elke start uit met de gewone
+  databasegebruiker en voegt ontbrekende kolommen automatisch toe
+  (self-healing migratie).
