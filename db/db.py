@@ -803,6 +803,46 @@ def get_circle_stats(circle_ids=None):
         )
 
 
+def get_scoped_loans(friend_id, admin_circle_ids=None):
+    """Uitleningen binnen de beheerscope van een gebruiker.
+
+    - admin_circle_ids None: alles (beheerder)
+    - admin_circle_ids leeg: alleen eigen uitleningen (als lener of eigenaar)
+    - anders: eigen uitleningen plus die van de kringen waarvan de
+      gebruiker kringbeheerder is
+    """
+    with Database() as db:
+        base = """
+            SELECT l.*, t.name AS tool_name, t.owner_id,
+                   of.name AS owner_name, bf.name AS borrower_name
+            FROM loans l
+            JOIN tools t ON t.id = l.tool_id
+            JOIN friends of ON of.id = t.owner_id
+            JOIN friends bf ON bf.id = l.borrower_id
+        """
+        if admin_circle_ids is None:
+            return db._query(base + " ORDER BY l.created_at DESC")
+        if not admin_circle_ids:
+            return db._query(
+                base + " WHERE (t.owner_id = %s OR l.borrower_id = %s) "
+                "ORDER BY l.created_at DESC",
+                (friend_id, friend_id),
+            )
+        placeholders = ",".join(["%s"] * len(admin_circle_ids))
+        return db._query(
+            base
+            + f"""
+              WHERE (t.owner_id = %s OR l.borrower_id = %s
+                 OR t.owner_id IN (SELECT friend_id FROM circle_members
+                                   WHERE circle_id IN ({placeholders}))
+                 OR l.borrower_id IN (SELECT friend_id FROM circle_members
+                                      WHERE circle_id IN ({placeholders})))
+              ORDER BY l.created_at DESC
+            """,
+            (friend_id, friend_id, *admin_circle_ids, *admin_circle_ids),
+        )
+
+
 def get_friend_transactions(friend_id):
     with Database() as db:
         return db._query(

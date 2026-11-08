@@ -31,6 +31,7 @@ from db.db import (
     get_circle,
     get_circle_members,
     get_circles,
+    get_scoped_loans,
     get_combi_suggestions,
     get_distinct_values,
     get_friend,
@@ -588,6 +589,20 @@ def _can_manage(tool):
     return bool(friend and (friend["is_admin"] or tool["owner_id"] == friend["id"]))
 
 
+@app.route("/mytools")
+@login_required
+def my_tools():
+    me = g.friend
+    tools_list = get_friend_tools(me["id"])
+    all_tools = get_tools() if me["is_admin"] else get_visible_tools(me["id"])
+    return render_template(
+        "mytools.html",
+        tools_list=tools_list,
+        all_tools=all_tools,
+        links=get_linked_tools_map([t["id"] for t in tools_list]),
+    )
+
+
 @app.route("/tools/<int:tool_id>")
 @login_required
 def tool_detail(tool_id):
@@ -614,6 +629,7 @@ def tool_detail(tool_id):
         links=links,
         available=available,
         is_own=tool["owner_id"] == me["id"],
+        can_manage=_can_manage(tool),
     )
 
 
@@ -830,6 +846,59 @@ def loans():
             t for t in get_visible_tools(friend["id"]) if not t["active_loan_id"]
         ]
     )
+    # scope bepalen: beheerder -> alles; kringbeheerder -> eigen + kringen;
+    # gewone gebruiker -> alleen eigen uitleningen
+    if friend["is_admin"]:
+        admin_circle_ids = None
+    else:
+        admin_circle_ids = [
+            c["id"] for c in get_circles(friend["id"]) if c.get("is_circle_admin")
+        ]
+    loans_list = get_scoped_loans(friend["id"], admin_circle_ids)
+
+    # filters
+    status_filter = request.args.get("status", "alle")
+    if status_filter not in STATUS_LABELS:
+        status_filter = "alle"
+    circle_filter = request.args.get("circle_id", type=int)
+    if status_filter != "alle":
+        loans_list = [l for l in loans_list if l["status"] == status_filter]
+    if circle_filter:
+        member_ids = {m["friend_id"] for m in get_circle_members(circle_filter)}
+        loans_list = [
+            l
+            for l in loans_list
+            if l["owner_id"] in member_ids or l["borrower_id"] in member_ids
+        ]
+
+    # sortering
+    sort = request.args.get("sort", "created_at")
+    direction = request.args.get("dir", "desc")
+    if direction not in ("asc", "desc"):
+        direction = "desc"
+    sort_keys = {
+        "tool": lambda l: (l["tool_name"] or "").lower(),
+        "owner": lambda l: (l["owner_name"] or "").lower(),
+        "borrower": lambda l: (l["borrower_name"] or "").lower(),
+        "status": lambda l: l["status"],
+        "lent_at": lambda l: l["lent_at"] or "",
+        "returned_at": lambda l: l["returned_at"] or "",
+        "created_at": lambda l: l["created_at"],
+    }
+    if sort in sort_keys:
+        loans_list = sorted(
+            loans_list, key=sort_keys[sort], reverse=direction == "desc"
+        )
+
+    # kringen voor de filterlijst
+    if friend["is_admin"]:
+        filter_circles = get_circles()
+    elif admin_circle_ids:
+        filter_circles = [
+            c for c in get_circles(friend["id"]) if c.get("is_circle_admin")
+        ]
+    else:
+        filter_circles = []
     return render_template(
         "loans.html",
         friend=friend,
@@ -837,6 +906,12 @@ def loans():
         friend_tools=get_friend_tools(friend["id"]),
         transactions=get_friend_transactions(friend["id"]),
         combi_suggestions=get_combi_suggestions(friend["id"]),
+        loans_list=loans_list,
+        status_filter=status_filter,
+        circle_filter=circle_filter,
+        filter_circles=filter_circles,
+        sort=sort,
+        direction=direction,
     )
 
 

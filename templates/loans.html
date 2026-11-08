@@ -98,16 +98,44 @@
 </section>
 
 <section>
-    <h2>Transacties van {{ friend.name }}</h2>
-    {% if transactions %}
+    <h2>Uitleningen</h2>
+    <form method="get" class="filter-form">
+        <label>Status
+            <select name="status" onchange="this.form.submit()">
+                <option value="alle" {% if status_filter == 'alle' %}selected{% endif %}>Alle</option>
+                {% for value, label in STATUS_LABELS.items() %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        {% if filter_circles %}
+        <label>Kring
+            <select name="circle_id" onchange="this.form.submit()">
+                <option value="">Alle kringen</option>
+                {% for c in filter_circles %}
+                <option value="{{ c.id }}" {% if circle_filter == c.id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        {% endif %}
+        <noscript><button type="submit">Filteren</button></noscript>
+    </form>
+    {% if loans_list %}
     <table>
         <thead>
-            <tr><th>Gereedschap</th><th>Van</th><th>Aan</th><th>Status</th><th>Uitgeleend op</th><th>Terug op</th></tr>
+            <tr>
+                <th><a href="{{ url_for('loans', status=status_filter, circle_filter=circle_filter or '', sort='tool', dir='asc' if sort == 'tool' and direction == 'desc' else 'desc') }}">Gereedschap {{ '▲' if sort == 'tool' and direction == 'asc' else ('▼' if sort == 'tool' else '') }}</a></th>
+                <th><a href="{{ url_for('loans', status=status_filter, circle_filter=circle_filter or '', sort='owner', dir='asc' if sort == 'owner' and direction == 'desc' else 'desc') }}">Van {{ '▲' if sort == 'owner' and direction == 'asc' else ('▼' if sort == 'owner' else '') }}</a></th>
+                <th><a href="{{ url_for('loans', status=status_filter, circle_filter=circle_filter or '', sort='borrower', dir='asc' if sort == 'borrower' and direction == 'desc' else 'desc') }}">Aan {{ '▲' if sort == 'borrower' and direction == 'asc' else ('▼' if sort == 'borrower' else '') }}</a></th>
+                <th><a href="{{ url_for('loans', status=status_filter, circle_filter=circle_filter or '', sort='status', dir='asc' if sort == 'status' and direction == 'desc' else 'desc') }}">Status {{ '▲' if sort == 'status' and direction == 'asc' else ('▼' if sort == 'status' else '') }}</a></th>
+                <th><a href="{{ url_for('loans', status=status_filter, circle_filter=circle_filter or '', sort='lent_at', dir='asc' if sort == 'lent_at' and direction == 'desc' else 'desc') }}">Uitgeleend op {{ '▲' if sort == 'lent_at' and direction == 'asc' else ('▼' if sort == 'lent_at' else '') }}</a></th>
+                <th><a href="{{ url_for('loans', status=status_filter, circle_filter=circle_filter or '', sort='returned_at', dir='asc' if sort == 'returned_at' and direction == 'desc' else 'desc') }}">Terug op {{ '▲' if sort == 'returned_at' and direction == 'asc' else ('▼' if sort == 'returned_at' else '') }}</a></th>
+            </tr>
         </thead>
         <tbody>
-            {% for loan in transactions %}
+            {% for loan in loans_list %}
             <tr>
-                <td>{{ loan.tool_name }}</td>
+                <td><a href="{{ url_for('tool_detail', tool_id=loan.tool_id) }}" class="tool-title-link">{{ loan.tool_name }}</a></td>
                 <td>{{ loan.owner_name }}</td>
                 <td>{{ loan.borrower_name }}</td>
                 <td><span class="status {{ loan.status }}">{{ STATUS_LABELS[loan.status] }}</span></td>
@@ -118,7 +146,7 @@
         </tbody>
     </table>
     {% else %}
-    <p>Nog geen transacties.</p>
+    <p>Geen uitleningen gevonden die aan de filters voldoen.</p>
     {% endif %}
 </section>
 {% endif %}

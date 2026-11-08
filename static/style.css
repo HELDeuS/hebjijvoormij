@@ -276,3 +276,5 @@ html.dark .tool-detail-image { background: #262d31; }
 .tool-title-link { color: inherit; text-decoration: none; }
 .tool-title-link:hover { color: var(--primary); text-decoration: underline; }
 .tool-image a { display: contents; }
+
+.filter-form { margin-bottom: 1rem; }

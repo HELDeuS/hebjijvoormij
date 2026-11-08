@@ -16,7 +16,10 @@ gereedschap uitleensysteem
   de voorkeur wordt per gebruiker onthouden. Bij Categorie en Merk
   kun je vrij typen of eerder gebruikte waardes kiezen.
   Klik op een kaart of naam voor een detailpagina met alle informatie
-  en een knop om direct een uitlening aan te vragen. Gereedschap is
+  en een knop om direct een uitlening aan te vragen; de eigenaar en de
+  beheerder zien daar ook de beheerknoppen (aanpassen, verwijderen,
+  plaatje). De pagina **Mijn gereedschap** toont uitsluitend het eigen
+  gereedschap. Gereedschap is
   achteraf aan te passen of te verwijderen via 'Aanpassen' en
   'Verwijderen' - alleen door de eigenaar of de beheerder. Verwijderen is geblokkeerd zolang het gereedschap is
   uitgeleend of aangevraagd.
@@ -138,7 +141,10 @@ Zie `.env.example` voor een compleet voorbeeldbestand.
 5. Registreer gereedschap onder **Gereedschap** (kies de eigenaar).
 6. Onder **Uitleningen** maak je een leenverzoek aan; de eigenaar keurt het
    goed of wijst het af, en het gereedschap wordt teruggegeven via
-   "Terugontvangen".
+   "Terugontvangen". Het uitleningenoverzicht is rolgebaseerd: een
+   gebruiker ziet zijn eigen uitleningen, een kringbeheerder die van
+   zijn kringen en de beheerder die van iedereen - met filters op
+   status en kring en sorteerbare kolommen.
 7. Maak onder **Kringen** een vriendenkring aan (je wordt automatisch
    kringbeheerder) en voeg je vrienden toe; alleen kringgenoten zien
    elkaars gereedschap en kunnen van elkaar lenen.
