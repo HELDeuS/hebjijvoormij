@@ -402,7 +402,8 @@ Wordt de beheerder niet herkend, controleer dan in deze volgorde:
    ```bash
    sudo mariadb gereedschap_leensysteem < /opt/hebjijvoormij/app/db/schema.sql
    ```
-   Het schema bevat het standaard admin-account (`admin@localhost` / `beheer123`,
+   Het admin-account wordt niet door het schema aangemaakt maar door de
+   app zelf bij het opstarten (standaard `admin@localhost` / `beheer123`,
    met verplichte wachtwoordwijziging bij de eerste login).
 5. **Logs bekijken**: `journalctl -u hebjijvoormij -f` — fouten bij het
    aanmaken van de beheerder worden hier gelogd.
