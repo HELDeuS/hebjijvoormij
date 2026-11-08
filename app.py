@@ -23,6 +23,7 @@ from db.db import (
     get_combi_suggestions,
     get_friend,
     get_friend_by_name,
+    get_friends,
     get_friend_stats,
     get_friend_tools,
     get_friend_transactions,
@@ -58,7 +59,7 @@ app.jinja_env.globals.update(STATUS_LABELS=STATUS_LABELS)
 @app.context_processor
 def inject_globals():
     return {
-        "friends": Database().get_friends() if g.get("friend") else [],
+        "friends": get_friends() if g.get("friend") else [],
         "friend": g.get("friend"),
     }
 
@@ -174,7 +175,7 @@ def friends():
                     "success",
                 )
         return redirect(url_for("friends"))
-    return render_template("friends.html", friends_list=Database().get_friends())
+    return render_template("friends.html", friends_list=get_friends())
 
 
 @app.route("/tools", methods=["GET", "POST"])

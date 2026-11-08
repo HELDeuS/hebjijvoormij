@@ -23,7 +23,10 @@ def _connect():
     if _pool is None:
         with _pool_lock:
             if _pool is None:
-                _pool = pooling.MySQLConnectionPool(pool_size=5, **DB_CONFIG)
+                pool_size = int(os.environ.get("DB_POOL_SIZE", "10"))
+                _pool = pooling.MySQLConnectionPool(
+                    pool_size=pool_size, **DB_CONFIG
+                )
     return _pool.get_connection()
 
 
@@ -159,6 +162,11 @@ def ensure_schema():
         for column, statement in tool_migrations.items():
             if column not in tool_columns:
                 db._execute(statement)
+
+
+def get_friends():
+    with Database() as db:
+        return db.get_friends()
 
 
 def get_friend(friend_id):
