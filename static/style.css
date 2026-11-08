@@ -178,3 +178,15 @@ section { overflow-x: auto; }
 }
 
 .upload-form input[type="file"] { flex: 1; min-width: 0; padding: .35rem; }
+
+.view-toggle { display: flex; gap: .5rem; margin-bottom: 1rem; }
+.view-toggle .toggle {
+    padding: .35rem .9rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--muted);
+    font-size: .85rem;
+}
+.view-toggle .toggle.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.tool-list th a { text-decoration: none; color: inherit; }

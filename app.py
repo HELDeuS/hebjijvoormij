@@ -21,6 +21,7 @@ from db.db import (
     approve_loan,
     create_loan_request,
     get_combi_suggestions,
+    get_distinct_values,
     get_friend,
     get_friend_by_name,
     get_friends,
@@ -209,11 +210,33 @@ def tools():
                     )
         return redirect(url_for("tools"))
     tools_list = get_tools()
+    view = request.args.get("view") or session.get("tools_view", "cards")
+    if view not in ("cards", "list"):
+        view = "cards"
+    session["tools_view"] = view
+    sort = request.args.get("sort", "name")
+    direction = request.args.get("dir", "asc")
+    if direction not in ("asc", "desc"):
+        direction = "asc"
+    sort_keys = {
+        "name": lambda t: (t["name"] or "").lower(),
+        "category": lambda t: (t["category"] or "").lower(),
+        "brand": lambda t: (t["brand"] or "").lower(),
+        "owner": lambda t: (t["owner_name"] or "").lower(),
+        "status": lambda t: t["loan_status"] or "beschikbaar",
+    }
+    if sort in sort_keys:
+        tools_list = sorted(tools_list, key=sort_keys[sort], reverse=direction == "desc")
     return render_template(
         "tools.html",
         tools_list=tools_list,
-        all_tools=tools_list,
+        all_tools=get_tools(),
         links=get_linked_tools_map([t["id"] for t in tools_list]),
+        view=view,
+        sort=sort,
+        direction=direction,
+        categories=get_distinct_values("category"),
+        brands=get_distinct_values("brand"),
     )
 
 

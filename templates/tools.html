@@ -12,11 +12,17 @@
                 {% endfor %}
             </select>
         </label>
-        <label>Naam* <input type="text" name="name" required></label>
+        <label>Soort gereedschap* <input type="text" name="name" placeholder="bijv. accuboormachine" required></label>
         <label>Omschrijving <input type="text" name="description"></label>
-        <label>Categorie <input type="text" name="category" placeholder="bv. elektra, tuin, klussen"></label>
-        <label>Merk <input type="text" name="brand" placeholder="bv. Bosch"></label>
+        <label>Categorie <input type="text" name="category" list="categories" placeholder="bv. elektra, tuin, klussen"></label>
+        <label>Merk <input type="text" name="brand" list="brands" placeholder="bv. Bosch"></label>
         <label>Type <input type="text" name="model" placeholder="bv. PSB 1800 LI-2"></label>
+        <datalist id="categories">
+            {% for c in categories %}<option value="{{ c }}"></option>{% endfor %}
+        </datalist>
+        <datalist id="brands">
+            {% for b in brands %}<option value="{{ b }}"></option>{% endfor %}
+        </datalist>
         <button type="submit">Registreren</button>
     </form>
     <p class="hint">Bij het invullen van merk en type wordt automatisch een plaatje opgezocht.</p>
@@ -24,7 +30,41 @@
 
 <section>
     <h2>Volledige catalogus</h2>
+    <div class="view-toggle">
+        <a href="{{ url_for('tools', view='cards') }}" class="toggle {{ 'active' if view == 'cards' else '' }}">Kaarten</a>
+        <a href="{{ url_for('tools', view='list') }}" class="toggle {{ 'active' if view == 'list' else '' }}">Lijst</a>
+    </div>
     {% if tools_list %}
+    {% if view == 'list' %}
+    <table class="tool-list">
+        <thead>
+            <tr>
+                <th><a href="{{ url_for('tools', view='list', sort='name', dir='desc' if sort == 'name' and direction == 'asc' else 'asc') }}">Soort {{ '▲' if sort == 'name' and direction == 'asc' else ('▼' if sort == 'name' else '') }}</a></th>
+                <th><a href="{{ url_for('tools', view='list', sort='category', dir='desc' if sort == 'category' and direction == 'asc' else 'asc') }}">Categorie {{ '▲' if sort == 'category' and direction == 'asc' else ('▼' if sort == 'category' else '') }}</a></th>
+                <th><a href="{{ url_for('tools', view='list', sort='brand', dir='desc' if sort == 'brand' and direction == 'asc' else 'asc') }}">Merk {{ '▲' if sort == 'brand' and direction == 'asc' else ('▼' if sort == 'brand' else '') }}</a></th>
+                <th><a href="{{ url_for('tools', view='list', sort='owner', dir='desc' if sort == 'owner' and direction == 'asc' else 'asc') }}">Eigenaar {{ '▲' if sort == 'owner' and direction == 'asc' else ('▼' if sort == 'owner' else '') }}</a></th>
+                <th><a href="{{ url_for('tools', view='list', sort='status', dir='desc' if sort == 'status' and direction == 'asc' else 'asc') }}">Status {{ '▲' if sort == 'status' and direction == 'asc' else ('▼' if sort == 'status' else '') }}</a></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tool in tools_list %}
+            <tr>
+                <td>{{ tool.name }}</td>
+                <td>{{ tool.category or "-" }}</td>
+                <td>{{ tool.brand or "-" }}</td>
+                <td>{{ tool.owner_name }}</td>
+                <td>
+                    {% if tool.active_loan_id %}
+                    <span class="status {{ tool.loan_status }}">{{ STATUS_LABELS[tool.loan_status] }}</span>
+                    {% else %}
+                    <span class="status beschikbaar">Beschikbaar</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
     <div class="tool-grid">
         {% for tool in tools_list %}
         <article class="tool-card">
@@ -105,6 +145,7 @@
         </article>
         {% endfor %}
     </div>
+    {% endif %}
     {% else %}
     <p>Nog geen gereedschap geregistreerd.</p>
     {% endif %}

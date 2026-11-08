@@ -7,7 +7,10 @@ gereedschap uitleensysteem
 - **Vrienden** – de beheerder registreert vrienden met naam, e-mail en
   telefoonnummer; elke vriend logt in met een eigen wachtwoord.
 - **Gereedschapscatalogus** – registreer gereedschap per eigenaar, met
-  omschrijving en categorie.
+  omschrijving en categorie. De catalogus is te bekijken als kaarten
+  of als sorteerbare lijst (Soort, Categorie, Merk, Eigenaar, Status);
+  de voorkeur wordt per gebruiker onthouden. Bij Categorie en Merk
+  kun je vrij typen of eerder gebruikte waardes kiezen.
   Zijn merk en type bekend, dan wordt er automatisch een plaatje
   opgezocht en op de gereedschapskaart getoond. Werkt het automatisch
   zoeken niet, upload dan zelf een foto (jpg, png, webp of gif,

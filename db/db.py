@@ -255,6 +255,21 @@ def get_tools(owner_id=None, available_only=False):
         return db.get_tools(owner_id=owner_id, available_only=available_only)
 
 
+def get_distinct_values(column):
+    """Geeft alle eerder gebruikte waardes van een kolom van tools terug."""
+    allowed = {"category", "brand"}
+    if column not in allowed:
+        raise ValueError(f"Kolom {column} is niet toegestaan")
+    with Database() as db:
+        return [
+            row["value"]
+            for row in db._query(
+                f"SELECT DISTINCT {column} AS value FROM tools "
+                "WHERE {0} IS NOT NULL AND {0} != '' ORDER BY value".format(column)
+            )
+        ]
+
+
 def get_tool(tool_id):
     with Database() as db:
         rows = db._query("SELECT * FROM tools WHERE id = %s", (tool_id,))
