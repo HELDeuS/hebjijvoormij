@@ -26,6 +26,24 @@ gereedschap uitleensysteem
 - MySQL / MariaDB (mysql-connector-python, connection pooling)
 - Server-side templates (Jinja2) en één CSS-bestand
 
+## Omgevingsvariabelen
+
+| Variabele | Standaard | Betekenis |
+|---|---|---|
+| `DB_HOST` | `127.0.0.1` | MariaDB-host |
+| `DB_PORT` | `3306` | MariaDB-poort |
+| `DB_USER` | `gereedschap` | databasegebruiker van de app |
+| `DB_PASSWORD` | `gereedschap` | wachtwoord van de databasegebruiker |
+| `DB_NAME` | `gereedschap_leensysteem` | databasenaam |
+| `SECRET_KEY` | – | ondertekening van sessies (vereist, geheim houden) |
+| `ADMIN_NAME` | `admin` | naam van de beheerder bij eerste aanmaak |
+| `ADMIN_PASSWORD` | `beheer123` | startwachtwoord van de beheerder |
+| `FLASK_HOST` | `127.0.0.1` | luisteradres van de app |
+| `FLASK_PORT` | `5000` | luisterpoort van de app |
+| `FLASK_DEBUG` | `0` | debug-mode; nooit aanzetten buiten localhost |
+
+Zie `.env.example` voor een compleet voorbeeldbestand.
+
 ## Installatie
 
 1. **Vereisten**: Python 3.10+ en een draaiende MySQL- of MariaDB-server.
@@ -80,7 +98,8 @@ gereedschap uitleensysteem
    is de beheerder verplicht een nieuw wachtwoord te kiezen.
 2. De beheerder registreert vrienden onder **Vrienden** met een
    startwachtwoord; elke nieuwe vriend kiest bij de eerste login een
-   eigen wachtwoord.
+   eigen wachtwoord. Gewone vrienden kunnen zelf geen nieuwe vrienden
+   aanmaken.
 3. Log in met je naam en wachtwoord; alles wat je doet, gebeurt onder je
    eigen account.
 3. Registreer gereedschap onder **Gereedschap** (kies de eigenaar).
@@ -169,8 +188,20 @@ DB_USER=gereedschap
 DB_PASSWORD=kies-een-goed-wachtwoord
 DB_NAME=gereedschap_leensysteem
 SECRET_KEY=hier-je-gegenereerde-sleutel
+ADMIN_NAME=admin
+ADMIN_PASSWORD=kies-eigen-startwachtwoord
+FLASK_HOST=127.0.0.1
+FLASK_PORT=5000
+FLASK_DEBUG=0
 ENV
 ```
+
+**Belangrijk bij de beheerder**: `ADMIN_NAME` en `ADMIN_PASSWORD` zijn de
+startgegevens waarmee de beheerder wordt aangemaakt. Kies een eigen
+startwachtwoord (niet de standaard `beheer123`) — de app maakt de
+beheerder bij de eerste start aan met deze gegevens en dwingt bij de
+eerste login tot het kiezen van een eigen nieuw wachtwoord. Bestaande
+beheerders worden bij latere starts nooit gewijzigd.
 
 Zet de juiste rechten:
 
