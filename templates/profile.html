@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Mijn profiel - hebjijvoormij{% endblock %}
+{% block content %}
+<section>
+    <h2>Mijn account</h2>
+    <p class="meta">
+        <strong>{{ account.name }}</strong> — {{ account.email }}{% if account.phone %} — {{ account.phone }}{% endif %}
+    </p>
+    <div class="manage-row">
+        <a href="{{ url_for('friend_edit', friend_id=account.id) }}" class="button-link">Gegevens aanpassen</a>
+        <form method="post" action="{{ url_for('friend_delete', friend_id=account.id) }}" class="inline"
+              onsubmit="return confirm('Je account verwijderen? Al je gereedschap, uitleningen en kringen gaan mee.');">
+            <button type="submit" class="reject">Account verwijderen</button>
+        </form>
+    </div>
+    <p class="hint">Bij "Gegevens aanpassen" kun je ook je wachtwoord wijzigen.</p>
+</section>
+
+<section>
+    <h2>Mijn gereedschap</h2>
+    {% if tools_list %}
+    {% include "_tool_grid.html" %}
+    {% else %}
+    <p>Je hebt nog geen gereedschap geregistreerd. Dat kan op de <a href="{{ url_for('tools') }}">Gereedschap</a>-pagina.</p>
+    {% endif %}
+</section>
+
+<section>
+    <h2>Mijn uitleningen</h2>
+    <p><a href="{{ url_for('loans') }}" class="button-link">Uitlening aanvragen of beheren</a></p>
+    {% if my_loans %}
+    <table>
+        <thead>
+            <tr><th>Gereedschap</th><th>Van</th><th>Aan</th><th>Status</th><th>Uitgeleend op</th><th>Terug op</th></tr>
+        </thead>
+        <tbody>
+            {% for loan in my_loans %}
+            <tr>
+                <td><a href="{{ url_for('tool_detail', tool_id=loan.tool_id) }}" class="tool-title-link">{{ loan.tool_name }}</a></td>
+                <td>{{ loan.owner_name }}</td>
+                <td>{{ loan.borrower_name }}</td>
+                <td><span class="status {{ loan.status }}">{{ STATUS_LABELS[loan.status] }}</span></td>
+                <td>{{ loan.lent_at or "-" }}</td>
+                <td>{{ loan.returned_at or "-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Nog geen uitleningen.</p>
+    {% endif %}
+</section>
+{% endblock %}

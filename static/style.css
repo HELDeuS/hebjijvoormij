@@ -278,3 +278,6 @@ html.dark .tool-detail-image { background: #262d31; }
 .tool-image a { display: contents; }
 
 .filter-form { margin-bottom: 1rem; }
+
+.profile-link { color: #fff; text-decoration: none; font-weight: 600; }
+.profile-link:hover { text-decoration: underline; }

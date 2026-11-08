@@ -1,0 +1,59 @@
+<div class="tool-grid">
+    {% for tool in tools_list %}
+    <article class="tool-card">
+        <div class="tool-image">
+            <a href="{{ url_for('tool_detail', tool_id=tool.id) }}">
+            {% if tool.image_path %}
+            <img src="{{ url_for('static', filename=tool.image_path) }}" alt="{{ tool.name }}">
+            {% else %}
+            <span class="no-image">🔧</span>
+            {% endif %}
+            </a>
+        </div>
+        <div class="tool-body">
+            <h3><a href="{{ url_for('tool_detail', tool_id=tool.id) }}" class="tool-title-link">{{ tool.name }}</a></h3>
+            <p class="meta">
+                {% if tool.brand or tool.model %}
+                {{ [tool.brand, tool.model] | select | join(' ') }}<br>
+                {% endif %}
+                {% if tool.borrower_name %}
+                <span class="owner">uitgeleend aan {{ tool.borrower_name }}</span>
+                {% endif %}
+            </p>
+            {% if tool.description %}<p>{{ tool.description }}</p>{% endif %}
+            {% if tool.category %}<p class="meta">{{ tool.category }}</p>{% endif %}
+            <p>
+                {% if tool.loan_id %}
+                <span class="status {{ tool.loan_status }}">{{ STATUS_LABELS[tool.loan_status] }}</span>
+                {% else %}
+                <span class="status beschikbaar">Beschikbaar</span>
+                {% endif %}
+            </p>
+            <div class="tool-actions">
+                <div class="manage-row">
+                    <a href="{{ url_for('tool_edit', tool_id=tool.id) }}" class="button-link">Aanpassen</a>
+                    <form method="post" action="{{ url_for('tool_delete', tool_id=tool.id) }}" class="inline"
+                          onsubmit="return confirm('Gereedschap \'{{ tool.name }}\' verwijderen?');">
+                        <button type="submit" class="reject">Verwijderen</button>
+                    </form>
+                </div>
+                <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" enctype="multipart/form-data" class="inline upload-form">
+                    <input type="hidden" name="action" value="upload">
+                    <input type="file" name="image_file" accept="image/*" required>
+                    <button type="submit">Plaatje uploaden</button>
+                </form>
+                <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline">
+                    <input type="hidden" name="action" value="search">
+                    <button type="submit">Plaatje zoeken</button>
+                </form>
+                {% if tool.image_path %}
+                <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline">
+                    <input type="hidden" name="action" value="remove">
+                    <button type="submit" class="reject">Plaatje verwijderen</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </article>
+    {% endfor %}
+</div>

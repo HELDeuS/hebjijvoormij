@@ -98,13 +98,11 @@
                         </form>
                         {% endif %}
                     {% endif %}
-                    {% if (friend and f.id == friend.id) or (friend and friend.is_admin) %}
-                        {% if not f.is_super_admin %}
+                    {% if friend and friend.is_admin and not f.is_super_admin %}
                         <form method="post" action="{{ url_for('friend_delete', friend_id=f.id) }}" class="inline"
                               onsubmit="return confirm('Account van \'{{ f.name }}\' verwijderen? Alle gereedschap en kringen gaan mee.');">
                             <button type="submit" class="link-remove" title="Account verwijderen">🗑</button>
                         </form>
-                        {% endif %}
                     {% endif %}
                 </td>
             </tr>

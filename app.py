@@ -480,8 +480,13 @@ def friend_edit(friend_id):
     if not friend:
         flash("Vriend niet gevonden.", "error")
         return redirect(url_for("friends"))
-    if not g.friend["is_admin"]:
-        flash("Alleen de beheerder kan accounts aanpassen.", "error")
+    me = g.friend
+    if not (me["is_admin"] or friend_id == me["id"]):
+        flash(
+            "Alleen de beheerder of de eigenaar van het account kan het "
+            "aanpassen.",
+            "error",
+        )
         return redirect(url_for("friends"))
     if request.method == "POST":
         name = request.form.get("name", "").strip()
@@ -495,7 +500,7 @@ def friend_edit(friend_id):
             if error:
                 flash(error, "error")
             else:
-                if friend_id == g.friend["id"]:
+                if friend_id == me["id"]:
                     flash(
                         "Je eigen gegevens zijn aangepast.",
                         "success",
@@ -505,9 +510,14 @@ def friend_edit(friend_id):
                 if new_password:
                     if len(new_password) < 6:
                         flash(
-                            "Nieuw startwachtwoord moet minstens 6 tekens zijn.",
+                            "Nieuw wachtwoord moet minstens 6 tekens zijn.",
                             "error",
                         )
+                    elif friend_id == me["id"]:
+                        set_friend_password(
+                            friend_id, generate_password_hash(new_password)
+                        )
+                        flash("Je wachtwoord is gewijzigd.", "success")
                     else:
                         reset_friend_password(
                             friend_id, generate_password_hash(new_password)
@@ -517,7 +527,7 @@ def friend_edit(friend_id):
                             "volgende login worden gewijzigd.",
                             "success",
                         )
-                return redirect(url_for("friends"))
+                return redirect(url_for("profile" if friend_id == me["id"] else "friends"))
         friend.update(name=name or friend["name"], email=email or friend["email"], phone=phone)
     return render_template("friend_edit.html", account=friend)
 
@@ -587,6 +597,21 @@ def tools():
 def _can_manage(tool):
     friend = g.friend
     return bool(friend and (friend["is_admin"] or tool["owner_id"] == friend["id"]))
+
+
+@app.route("/profile")
+@login_required
+def profile():
+    me = g.friend
+    tools_list = get_friend_tools(me["id"])
+    my_loans = get_scoped_loans(me["id"], [] if not me["is_admin"] else None)
+    return render_template(
+        "profile.html",
+        account=me,
+        tools_list=tools_list,
+        links=get_linked_tools_map([t["id"] for t in tools_list]),
+        my_loans=my_loans,
+    )
 
 
 @app.route("/mytools")
