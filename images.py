@@ -92,6 +92,33 @@ def download_image(image_url, tool_id):
         return None
 
 
+def upload_image(file_storage, tool_id):
+    """Slaat een geüpload afbeeldingsbestand op naar static/tool_images en
+    geeft het relatieve pad terug, of None bij een ongeldig bestand."""
+    if not file_storage or not file_storage.filename:
+        return None
+    content_type = file_storage.content_type or ""
+    extensions = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+        "image/gif": ".gif",
+    }
+    if content_type not in extensions:
+        return None
+    data = file_storage.read()
+    if not data or len(data) > MAX_IMAGE_BYTES:
+        return None
+    os.makedirs(IMAGES_DIR, exist_ok=True)
+    filename = f"tool_{tool_id}{extensions[content_type]}"
+    for old in os.listdir(IMAGES_DIR):
+        if old.startswith(f"tool_{tool_id}."):
+            os.remove(os.path.join(IMAGES_DIR, old))
+    with open(os.path.join(IMAGES_DIR, filename), "wb") as f:
+        f.write(data)
+    return f"tool_images/{filename}"
+
+
 def build_query(name, brand, model):
     parts = [p for p in (brand, model, name) if p]
     return " ".join(parts).strip() or None

@@ -41,7 +41,7 @@ from db.db import (
     set_friend_password,
     set_tool_image,
 )
-from images import download_image, find_and_store_image
+from images import download_image, find_and_store_image, upload_image
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-key-verander-dit")
@@ -267,6 +267,17 @@ def tool_image(tool_id):
             flash("Plaatje toegevoegd.", "success")
         else:
             flash("Deze afbeeldings-URL kon niet worden gedownload.", "error")
+    elif action == "upload":
+        image_path = upload_image(request.files.get("image_file"), tool_id)
+        if image_path:
+            set_tool_image(tool_id, image_path)
+            flash("Plaatje geüpload.", "success")
+        else:
+            flash(
+                "Geen geldig afbeeldingsbestand (jpg, png, webp of gif, "
+                "max. 5 MB).",
+                "error",
+            )
     elif action == "remove":
         remove_tool_image(tool_id)
         flash("Plaatje verwijderd.", "success")

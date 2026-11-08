@@ -85,6 +85,11 @@
                     {% endif %}
                 </p>
                 <div class="tool-actions">
+                    <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" enctype="multipart/form-data" class="inline upload-form">
+                        <input type="hidden" name="action" value="upload">
+                        <input type="file" name="image_file" accept="image/*" required>
+                        <button type="submit">Plaatje uploaden</button>
+                    </form>
                     <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline">
                         <input type="hidden" name="action" value="search">
                         <button type="submit">Plaatje zoeken</button>
