@@ -496,6 +496,171 @@ def get_combi_suggestions(friend_id):
         )
 
 
+def create_circle(name, creator_id):
+    """Maakt een kring aan; de maker wordt automatisch kringbeheerder."""
+    with Database() as db:
+        try:
+            circle_id = db._execute(
+                "INSERT INTO circles (name, created_by) VALUES (%s, %s)",
+                (name, creator_id),
+            )
+            db._execute(
+                "INSERT INTO circle_members (circle_id, friend_id, is_circle_admin) "
+                "VALUES (%s, %s, 1)",
+                (circle_id, creator_id),
+            )
+            return circle_id
+        except mysql.connector.errors.IntegrityError:
+            return None
+
+
+def get_circles(friend_id=None):
+    """Geeft alle kringen terug, of alleen de kringen waar de vriend lid van is.
+    Elke kring bevat het aantal leden en of de opgevraagde vriend
+    kringbeheerder is."""
+    with Database() as db:
+        if friend_id is None:
+            return db._query(
+                """
+                SELECT c.*, COUNT(cm.id) AS member_count,
+                       EXISTS(SELECT 1 FROM circle_members x
+                              WHERE x.circle_id = c.id AND x.friend_id = %s
+                                 AND x.is_circle_admin = 1) AS is_circle_admin
+                FROM circles c
+                LEFT JOIN circle_members cm ON cm.circle_id = c.id
+                GROUP BY c.id
+                ORDER BY c.name
+                """,
+                (friend_id,),
+            ) if friend_id else db._query(
+                """
+                SELECT c.*, COUNT(cm.id) AS member_count
+                FROM circles c
+                LEFT JOIN circle_members cm ON cm.circle_id = c.id
+                GROUP BY c.id
+                ORDER BY c.name
+                """
+            )
+        return db._query(
+            """
+            SELECT c.*, COUNT(cm.id) AS member_count,
+                   cm.is_circle_admin,
+                   EXISTS(SELECT 1 FROM circle_members x
+                          WHERE x.circle_id = c.id AND x.friend_id = %s
+                             AND x.is_circle_admin = 1) AS is_circle_admin
+            FROM circles c
+            JOIN circle_members my ON my.circle_id = c.id AND my.friend_id = %s
+            LEFT JOIN circle_members cm ON cm.circle_id = c.id
+            GROUP BY c.id, cm.is_circle_admin
+            ORDER BY c.name
+            """,
+            (friend_id, friend_id),
+        )
+
+
+def get_circle(circle_id):
+    with Database() as db:
+        rows = db._query("SELECT * FROM circles WHERE id = %s", (circle_id,))
+        return rows[0] if rows else None
+
+
+def get_circle_members(circle_id):
+    with Database() as db:
+        return db._query(
+            """
+            SELECT cm.friend_id, cm.is_circle_admin, f.name, f.email
+            FROM circle_members cm
+            JOIN friends f ON f.id = cm.friend_id
+            WHERE cm.circle_id = %s
+            ORDER BY cm.is_circle_admin DESC, f.name
+            """,
+            (circle_id,),
+        )
+
+
+def is_circle_admin(circle_id, friend_id):
+    with Database() as db:
+        return bool(
+            db._query(
+                "SELECT id FROM circle_members WHERE circle_id = %s "
+                "AND friend_id = %s AND is_circle_admin = 1",
+                (circle_id, friend_id),
+            )
+        )
+
+
+def add_circle_member(circle_id, friend_id):
+    with Database() as db:
+        try:
+            db._execute(
+                "INSERT INTO circle_members (circle_id, friend_id) VALUES (%s, %s)",
+                (circle_id, friend_id),
+            )
+            return True
+        except mysql.connector.errors.IntegrityError:
+            return False
+
+
+def remove_circle_member(circle_id, friend_id):
+    with Database() as db:
+        db._execute(
+            "DELETE FROM circle_members WHERE circle_id = %s AND friend_id = %s",
+            (circle_id, friend_id),
+        )
+
+
+def update_circle(circle_id, name):
+    with Database() as db:
+        try:
+            db._execute("UPDATE circles SET name = %s WHERE id = %s", (name, circle_id))
+            return True
+        except mysql.connector.errors.IntegrityError:
+            return False
+
+
+def delete_circle(circle_id):
+    with Database() as db:
+        db._execute("DELETE FROM circles WHERE id = %s", (circle_id,))
+
+
+def get_visible_friend_ids(friend_id):
+    """Vrienden met wie je minstens een kring deelt."""
+    with Database() as db:
+        rows = db._query(
+            """
+            SELECT DISTINCT cm2.friend_id AS id
+            FROM circle_members cm1
+            JOIN circle_members cm2 ON cm2.circle_id = cm1.circle_id
+            WHERE cm1.friend_id = %s AND cm2.friend_id <> %s
+            """,
+            (friend_id, friend_id),
+        )
+        return {row["id"] for row in rows}
+
+
+def get_visible_tools(friend_id):
+    """Gereedschap van de vriend zelf en van vrienden met wie hij een
+    kring deelt."""
+    with Database() as db:
+        return db._query(
+            """
+            SELECT t.*, f.name AS owner_name,
+                   l.id AS active_loan_id, l.borrower_id, l.status AS loan_status
+            FROM tools t
+            JOIN friends f ON f.id = t.owner_id
+            LEFT JOIN loans l ON l.tool_id = t.id
+                 AND l.status IN ('aangevraagd', 'uitgeleend')
+            WHERE t.owner_id = %s OR t.owner_id IN (
+                SELECT cm2.friend_id FROM circle_members cm1
+                JOIN circle_members cm2 ON cm2.circle_id = cm1.circle_id
+                WHERE cm1.friend_id = %s
+            )
+            ORDER BY t.name
+            """,
+            (friend_id, friend_id),
+        )
+
+
 def get_friend_transactions(friend_id):
     with Database() as db:
         return db._query(
@@ -513,8 +678,23 @@ def get_friend_transactions(friend_id):
         )
 
 
-def get_overview():
+def get_overview(friend_id=None):
     with Database() as db:
+        scope = ""
+        params = ()
+        if friend_id is not None:
+            scope = """
+              AND (t.owner_id IN (
+                    SELECT cm2.friend_id FROM circle_members cm1
+                    JOIN circle_members cm2 ON cm2.circle_id = cm1.circle_id
+                    WHERE cm1.friend_id = %s
+                  ) OR l.borrower_id IN (
+                    SELECT cm2.friend_id FROM circle_members cm1
+                    JOIN circle_members cm2 ON cm2.circle_id = cm1.circle_id
+                    WHERE cm1.friend_id = %s
+                  ) OR t.owner_id = %s OR l.borrower_id = %s)
+            """
+            params = (friend_id, friend_id, friend_id, friend_id)
         return db._query(
             """
             SELECT l.*, t.name AS tool_name,
@@ -523,14 +703,28 @@ def get_overview():
             JOIN tools t ON t.id = l.tool_id
             JOIN friends of ON of.id = t.owner_id
             JOIN friends bf ON bf.id = l.borrower_id
-            WHERE l.status IN ('aangevraagd', 'uitgeleend')
+            WHERE l.status IN ('aangevraagd', 'uitgeleend')""" + scope + """
             ORDER BY l.status, l.created_at
-            """
+            """,
+            params,
         )
 
 
-def get_friend_stats():
+def get_friend_stats(friend_id=None):
+    """Statistieken per vriend; optioneel beperkt tot vrienden met wie de
+    opgegeven vriend een kring deelt."""
     with Database() as db:
+        scope = ""
+        params = ()
+        if friend_id is not None:
+            scope = """
+            WHERE f.id = %s OR f.id IN (
+                SELECT cm2.friend_id FROM circle_members cm1
+                JOIN circle_members cm2 ON cm2.circle_id = cm1.circle_id
+                WHERE cm1.friend_id = %s
+            )
+            """
+            params = (friend_id, friend_id)
         return db._query(
             """
             SELECT f.id, f.name,
@@ -540,7 +734,9 @@ def get_friend_stats():
             FROM friends f
             LEFT JOIN tools t ON t.owner_id = f.id
             LEFT JOIN loans l ON l.tool_id = t.id AND l.status IN ('aangevraagd', 'uitgeleend')
+            """ + scope + """
             GROUP BY f.id, f.name
             ORDER BY f.name
-            """
+            """,
+            params,
         )

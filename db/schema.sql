@@ -52,3 +52,21 @@ INSERT IGNORE INTO friends (name, email, phone, password_hash, is_admin, must_ch
 VALUES ('admin', 'admin@localhost', '',
         'scrypt:32768:8:1$ThfW3wfwfsCmUVdS$b1637a167f06b0d30093df10fbbc292d36d822a519c2c42568a01e381d2fc9a1a6d13651bbd82052b6120f06a66046c5eef79c4760b57d24b32c39e743f5068b',
         1, 1);
+
+CREATE TABLE IF NOT EXISTS circles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES friends(id)
+);
+
+CREATE TABLE IF NOT EXISTS circle_members (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    circle_id INT NOT NULL,
+    friend_id INT NOT NULL,
+    is_circle_admin TINYINT(1) NOT NULL DEFAULT 0,
+    UNIQUE KEY uq_circle_member (circle_id, friend_id),
+    FOREIGN KEY (circle_id) REFERENCES circles(id) ON DELETE CASCADE,
+    FOREIGN KEY (friend_id) REFERENCES friends(id)
+);

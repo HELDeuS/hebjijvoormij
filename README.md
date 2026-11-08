@@ -28,6 +28,10 @@ gereedschap uitleensysteem
   bijbehorend gereedschap direct mee te lenen.
 - **Uitleningen met status** – leenverzoeken doorlopen de statuscyclus
   `aangevraagd` → `uitgeleend` → `teruggekeerd` (of `geweigerd`).
+- **Vriendenkringen** – iedereen kan een kring aanmaken en wordt dan
+  automatisch kringbeheerder; die kan leden toevoegen en verwijderen.
+  Je ziet alleen gereedschap van vrienden met wie je een kring deelt.
+  De beheerder kan kringen hernoemen en verwijderen.
 - **Overzichten** – openstaande uitleningen en verzoeken, per-vriend statistieken,
   en een persoonlijk transactieoverzicht.
 
@@ -126,7 +130,11 @@ Zie `.env.example` voor een compleet voorbeeldbestand.
 6. Onder **Uitleningen** maak je een leenverzoek aan; de eigenaar keurt het
    goed of wijst het af, en het gereedschap wordt teruggegeven via
    "Terugontvangen".
-7. Het **Overzicht** toont alle openstaande leningen en statistieken per vriend.
+7. Maak onder **Kringen** een vriendenkring aan (je wordt automatisch
+   kringbeheerder) en voeg je vrienden toe; alleen kringgenoten zien
+   elkaars gereedschap en kunnen van elkaar lenen.
+8. Het **Overzicht** toont alle openstaande leningen en statistieken,
+   beperkt tot jouw kringen.
 
 ### Inloggen en beveiliging
 
@@ -417,6 +425,9 @@ Zie `db/schema.sql`. Belangrijk:
   mensen uitgeleerd kan zijn;
 - `tool_links` bevat de symmetrische koppelingen tussen gereedschappen
   ("goed te combineren met");
+- `circles` en `circle_members` vormen de vriendenkringen; de maker van
+  een kring is kringbeheerder en het gereedschap is alleen zichtbaar
+  en leenbaar binnen gedeelde kringen;
 - het schema zet direct het standaard beheerdersaccount neer
   (`admin`, met verplichte wachtwoordwijziging bij de eerste login);
 - de app voert het schema bij elke start uit met de gewone

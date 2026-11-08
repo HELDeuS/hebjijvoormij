@@ -15,12 +15,20 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from db.db import (
     Database,
+    add_circle_member,
     add_friend,
     add_tool,
     add_tool_link,
     approve_loan,
+    create_circle,
     create_loan_request,
+    delete_circle,
     delete_tool,
+    ensure_admin,
+    ensure_schema,
+    get_circle,
+    get_circle_members,
+    get_circles,
     get_combi_suggestions,
     get_distinct_values,
     get_friend,
@@ -33,17 +41,19 @@ from db.db import (
     get_overview,
     get_tool,
     get_tools,
-    ensure_admin,
-    ensure_schema,
+    get_visible_tools,
     init_db,
+    is_circle_admin,
+    remove_circle_member,
     remove_tool_image,
     remove_tool_link,
     reset_friend_password,
     reject_loan,
     return_loan,
-    update_friend,
     set_friend_password,
     set_tool_image,
+    update_circle,
+    update_friend,
     update_tool,
 )
 from images import find_and_store_image, upload_image
@@ -147,7 +157,16 @@ def logout():
 @app.route("/")
 @login_required
 def index():
-    return render_template("index.html", overview=get_overview(), stats=get_friend_stats())
+    me = g.friend
+    if me["is_admin"]:
+        return render_template(
+            "index.html", overview=get_overview(), stats=get_friend_stats()
+        )
+    return render_template(
+        "index.html",
+        overview=get_overview(me["id"]),
+        stats=get_friend_stats(me["id"]),
+    )
 
 
 @app.route("/friends", methods=["GET", "POST"])
@@ -185,6 +204,105 @@ def friends():
                 )
         return redirect(url_for("friends"))
     return render_template("friends.html", friends_list=get_friends())
+
+
+@app.route("/circles", methods=["GET", "POST"])
+@login_required
+def circles():
+    me = g.friend
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        if not name:
+            flash("Geef de kring een naam.", "error")
+        elif create_circle(name, me["id"]) is None:
+            flash("Er bestaat al een kring met deze naam.", "error")
+        else:
+            flash(
+                f"Kring '{name}' is aangemaakt; je bent automatisch "
+                "kringbeheerder.",
+                "success",
+            )
+        return redirect(url_for("circles"))
+    my_circles = get_circles(me["id"])
+    all_circles = get_circles() if me["is_admin"] else []
+    return render_template(
+        "circles.html",
+        my_circles=my_circles,
+        all_circles=all_circles,
+        friends_list=get_friends(),
+        members={c["id"]: get_circle_members(c["id"]) for c in my_circles},
+        all_members={c["id"]: get_circle_members(c["id"]) for c in all_circles},
+    )
+
+
+@app.route("/circles/<int:circle_id>/members", methods=["POST"])
+@login_required
+def circle_members(circle_id):
+    me = g.friend
+    circle = get_circle(circle_id)
+    if not circle:
+        flash("Kring niet gevonden.", "error")
+        return redirect(url_for("circles"))
+    if not (me["is_admin"] or is_circle_admin(circle_id, me["id"])):
+        flash(
+            "Alleen de kringbeheerder of de beheerder kan leden beheren.",
+            "error",
+        )
+        return redirect(url_for("circles"))
+    action = request.form.get("action")
+    member_id = request.form.get("member_id", type=int)
+    if action == "add":
+        member = get_friend(member_id) if member_id else None
+        if not member:
+            flash("Kies een vriend om toe te voegen.", "error")
+        elif add_circle_member(circle_id, member_id):
+            flash(f"{member['name']} is toegevoegd aan de kring.", "success")
+        else:
+            flash(f"{member['name']} is al lid van deze kring.", "error")
+    elif action == "remove":
+        if member_id and get_friend(member_id):
+            remove_circle_member(circle_id, member_id)
+            flash("Lid is verwijderd uit de kring.", "success")
+    return redirect(url_for("circles"))
+
+
+@app.route("/circles/<int:circle_id>/edit", methods=["GET", "POST"])
+@login_required
+def circle_edit(circle_id):
+    me = g.friend
+    circle = get_circle(circle_id)
+    if not circle:
+        flash("Kring niet gevonden.", "error")
+        return redirect(url_for("circles"))
+    if not me["is_admin"]:
+        flash("Alleen de beheerder kan kringen hernoemen.", "error")
+        return redirect(url_for("circles"))
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        if not name:
+            flash("Geef de kring een naam.", "error")
+        elif update_circle(circle_id, name):
+            flash("Kringnaam is aangepast.", "success")
+            return redirect(url_for("circles"))
+        else:
+            flash("Er bestaat al een kring met deze naam.", "error")
+    return render_template("circle_edit.html", circle=circle)
+
+
+@app.route("/circles/<int:circle_id>/delete", methods=["POST"])
+@login_required
+def circle_delete(circle_id):
+    me = g.friend
+    circle = get_circle(circle_id)
+    if not circle:
+        flash("Kring niet gevonden.", "error")
+        return redirect(url_for("circles"))
+    if not me["is_admin"]:
+        flash("Alleen de beheerder kan kringen verwijderen.", "error")
+        return redirect(url_for("circles"))
+    delete_circle(circle_id)
+    flash(f"Kring '{circle['name']}' is verwijderd.", "success")
+    return redirect(url_for("circles"))
 
 
 @app.route("/friends/<int:friend_id>/edit", methods=["GET", "POST"])
@@ -266,7 +384,8 @@ def tools():
                         "warning",
                     )
         return redirect(url_for("tools"))
-    tools_list = get_tools()
+    me = g.friend
+    tools_list = get_tools() if me["is_admin"] else get_visible_tools(me["id"])
     view = request.args.get("view") or session.get("tools_view", "cards")
     if view not in ("cards", "list"):
         view = "cards"
@@ -287,7 +406,7 @@ def tools():
     return render_template(
         "tools.html",
         tools_list=tools_list,
-        all_tools=get_tools(),
+        all_tools=tools_list,
         links=get_linked_tools_map([t["id"] for t in tools_list]),
         view=view,
         sort=sort,
@@ -464,8 +583,17 @@ def loans():
                 flash("Kies een gereedschap.", "error")
             else:
                 tool = get_tool(tool_id)
+                visible = get_visible_tools(friend["id"])
                 if tool and tool["owner_id"] == friend["id"]:
                     flash("Je kunt niet je eigen gereedschap lenen.", "error")
+                elif tool and not any(
+                    t["id"] == tool_id for t in visible
+                ):
+                    flash(
+                        "Dit gereedschap is niet beschikbaar binnen jouw "
+                        "vriendenkringen.",
+                        "error",
+                    )
                 elif create_loan_request(tool_id, friend["id"]):
                     flash("Leenverzoek aangemaakt.", "success")
                     suggestions = get_combi_suggestions(friend["id"])
@@ -499,10 +627,17 @@ def loans():
             else:
                 flash("Actie niet mogelijk.", "error")
             return redirect(url_for("loans"))
+    available_tools = (
+        get_tools(available_only=True)
+        if friend["is_admin"]
+        else [
+            t for t in get_visible_tools(friend["id"]) if not t["active_loan_id"]
+        ]
+    )
     return render_template(
         "loans.html",
         friend=friend,
-        available_tools=get_tools(available_only=True),
+        available_tools=available_tools,
         friend_tools=get_friend_tools(friend["id"]),
         transactions=get_friend_transactions(friend["id"]),
         combi_suggestions=get_combi_suggestions(friend["id"]),

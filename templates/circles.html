@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Kringen - hebjijvoormij{% endblock %}
+{% block content %}
+<section>
+    <h2>Nieuwe kring aanmaken</h2>
+    <form method="post">
+        <label>Naam* <input type="text" name="name" placeholder="bv. Buurtklussers" required></label>
+        <button type="submit">Aanmaken</button>
+    </form>
+    <p class="hint">Iedereen kan een kring aanmaken; de maker wordt automatisch kringbeheerder en kan leden toevoegen en verwijderen.</p>
+</section>
+
+<section>
+    <h2>Mijn kringen</h2>
+    {% if my_circles %}
+    {% for circle in my_circles %}
+    <article class="circle-card">
+        <h3>{{ circle.name }} <span class="meta">({{ circle.member_count }} leden)</span>
+            {% if circle.is_circle_admin %}<span class="status beschikbaar">Jij bent kringbeheerder</span>{% endif %}
+        </h3>
+        <ul class="member-list">
+            {% for member in members[circle.id] %}
+            <li>
+                {{ member.name }} <span class="meta">{{ member.email }}</span>
+                {% if member.is_circle_admin %}<span class="status uitgeleend">Kringbeheerder</span>{% endif %}
+                {% if friend and (friend.is_admin or circle.is_circle_admin) %}
+                <form method="post" action="{{ url_for('circle_members', circle_id=circle.id) }}" class="inline">
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="member_id" value="{{ member.friend_id }}">
+                    <button type="submit" class="link-remove" title="Uit kring verwijderen">✕</button>
+                </form>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% if friend and (friend.is_admin or circle.is_circle_admin) %}
+        <form method="post" action="{{ url_for('circle_members', circle_id=circle.id) }}" class="inline link-add">
+            <input type="hidden" name="action" value="add">
+            <select name="member_id" required>
+                <option value="">— kies een vriend —</option>
+                {% for f in friends_list %}
+                <option value="{{ f.id }}">{{ f.name }} ({{ f.email }})</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Toevoegen</button>
+        </form>
+        {% endif %}
+    </article>
+    {% endfor %}
+    {% else %}
+    <p>Je bent nog geen lid van een kring. Maak er één aan hierboven!</p>
+    {% endif %}
+</section>
+
+{% if friend and friend.is_admin and all_circles %}
+<section>
+    <h2>Alle kringen (beheer)</h2>
+    {% for circle in all_circles %}
+    <article class="circle-card">
+        <h3>{{ circle.name }} <span class="meta">({{ circle.member_count }} leden)</span></h3>
+        <ul class="member-list">
+            {% for member in all_members[circle.id] %}
+            <li>
+                {{ member.name }} <span class="meta">{{ member.email }}</span>
+                {% if member.is_circle_admin %}<span class="status uitgeleend">Kringbeheerder</span>{% endif %}
+                <form method="post" action="{{ url_for('circle_members', circle_id=circle.id) }}" class="inline">
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="member_id" value="{{ member.friend_id }}">
+                    <button type="submit" class="link-remove" title="Uit kring verwijderen">✕</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        <form method="post" action="{{ url_for('circle_members', circle_id=circle.id) }}" class="inline link-add">
+            <input type="hidden" name="action" value="add">
+            <select name="member_id" required>
+                <option value="">— kies een vriend —</option>
+                {% for f in friends_list %}
+                <option value="{{ f.id }}">{{ f.name }} ({{ f.email }})</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Toevoegen</button>
+        </form>
+        <div class="manage-row">
+            <a href="{{ url_for('circle_edit', circle_id=circle.id) }}" class="button-link">Naam wijzigen</a>
+            <form method="post" action="{{ url_for('circle_delete', circle_id=circle.id) }}" class="inline"
+                  onsubmit="return confirm('Kring \\'{{ circle.name }}\\' verwijderen?');">
+                <button type="submit" class="reject">Verwijderen</button>
+            </form>
+        </div>
+    </article>
+    {% endfor %}
+</section>
+{% endif %}
+{% endblock %}
