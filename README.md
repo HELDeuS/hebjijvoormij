@@ -136,8 +136,12 @@ Zie `.env.example` voor een compleet voorbeeldbestand.
    telefoon) en een nieuw startwachtwoord instellen via **Aanpassen**
    in de vriendenlijst - ook het eigen account van de beheerder,
    inclusief het eigen e-mailadres (de inlognaam).
-4. Log in met je e-mailadres en wachtwoord; alles wat je doet, gebeurt
-   onder je eigen account.
+4. Log in met je e-mailadres en wachtwoord. Klik rechtsboven op je
+   naam voor je **profiel**: daar beheer je je eigen account (gegevens
+   en wachtwoord wijzigen, account verwijderen), zie je je eigen
+   gereedschap en je eigen uitleningen. Gewone gebruikers hebben geen
+   aparte navigatie-items meer voor uitleningen en eigen gereedschap;
+   de beheerder houdt de uitleningen-pagina voor algemeen beheer.
 5. Registreer gereedschap onder **Gereedschap** (kies de eigenaar).
 6. Onder **Uitleningen** maak je een leenverzoek aan; de eigenaar keurt het
    goed of wijst het af, en het gereedschap wordt teruggegeven via
