@@ -268,6 +268,26 @@ def update_tool(tool_id, owner_id, name, description, category, brand, model):
             return False
 
 
+def delete_tool(tool_id):
+    """Verwijdert gereedschap inclusief koppelingen en leengeschiedenis.
+    Geeft False terug zolang er openstaande leningen of verzoeken zijn."""
+    with Database() as db:
+        active = db._query(
+            "SELECT id FROM loans WHERE tool_id = %s "
+            "AND status IN ('aangevraagd', 'uitgeleend')",
+            (tool_id,),
+        )
+        if active:
+            return False
+        db._execute("DELETE FROM loans WHERE tool_id = %s", (tool_id,))
+        db._execute(
+            "DELETE FROM tool_links WHERE tool_id = %s OR linked_tool_id = %s",
+            (tool_id, tool_id),
+        )
+        db._execute("DELETE FROM tools WHERE id = %s", (tool_id,))
+        return True
+
+
 def get_distinct_values(column):
     """Geeft alle eerder gebruikte waardes van een kolom van tools terug."""
     allowed = {"category", "brand"}

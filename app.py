@@ -20,6 +20,7 @@ from db.db import (
     add_tool_link,
     approve_loan,
     create_loan_request,
+    delete_tool,
     get_combi_suggestions,
     get_distinct_values,
     get_friend,
@@ -241,12 +242,20 @@ def tools():
     )
 
 
+def _can_manage(tool):
+    friend = g.friend
+    return bool(friend and (friend["is_admin"] or tool["owner_id"] == friend["id"]))
+
+
 @app.route("/tools/<int:tool_id>/edit", methods=["GET", "POST"])
 @login_required
 def tool_edit(tool_id):
     tool = get_tool(tool_id)
     if not tool:
         flash("Gereedschap niet gevonden.", "error")
+        return redirect(url_for("tools"))
+    if not _can_manage(tool):
+        flash("Alleen de eigenaar of de beheerder kan dit gereedschap aanpassen.", "error")
         return redirect(url_for("tools"))
     if request.method == "POST":
         owner_id = request.form.get("owner_id", type=int)
@@ -279,6 +288,35 @@ def tool_edit(tool_id):
         categories=get_distinct_values("category"),
         brands=get_distinct_values("brand"),
     )
+
+
+@app.route("/tools/<int:tool_id>/delete", methods=["POST"])
+@login_required
+def tool_delete(tool_id):
+    tool = get_tool(tool_id)
+    if not tool:
+        flash("Gereedschap niet gevonden.", "error")
+        return redirect(url_for("tools"))
+    if not _can_manage(tool):
+        flash("Alleen de eigenaar of de beheerder kan dit gereedschap verwijderen.", "error")
+        return redirect(url_for("tools"))
+    if delete_tool(tool_id):
+        if tool.get("image_path"):
+            image_file = os.path.join(
+                app.static_folder, tool["image_path"]
+            )
+            try:
+                os.remove(image_file)
+            except OSError:
+                pass
+        flash(f"Gereedschap '{tool['name']}' is verwijderd.", "success")
+    else:
+        flash(
+            "Dit gereedschap is uitgeleend of aangevraagd; "
+            "wacht tot het is teruggekeerd.",
+            "error",
+        )
+    return redirect(url_for("tools"))
 
 
 @app.route("/tools/<int:tool_id>/link", methods=["POST"])

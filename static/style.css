@@ -193,3 +193,5 @@ section { overflow-x: auto; }
 
 .edit-link { color: var(--primary-dark); font-weight: 600; text-decoration: none; font-size: .85rem; }
 .edit-link:hover { text-decoration: underline; }
+
+.manage-row { display: flex; gap: .75rem; align-items: center; margin-bottom: .4rem; }
