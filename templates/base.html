@@ -4,7 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}hebjijvoormij{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+    <script>
+        (function () {
+            var stored = localStorage.getItem("theme");
+            var dark = stored === "dark" ||
+                (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+            if (dark) document.documentElement.classList.add("dark");
+        })();
+    </script>
 </head>
 <body>
 <header>
@@ -17,6 +25,7 @@
         <a href="{{ url_for('loans') }}">Uitleningen</a>
     </nav>
     <div class="user-bar">
+        <button type="button" id="theme-toggle" class="theme-toggle" title="Donker/licht thema wisselen">🌙</button>
         <span>👋 {{ friend.name }}</span>
         <form method="post" action="{{ url_for('logout') }}" class="inline">
             <button type="submit">Uitloggen</button>
@@ -40,5 +49,17 @@
 <footer>
     <p>Gereedschap van vrienden, voor vrienden.</p>
 </footer>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", function () {
+        var root = document.documentElement;
+        var dark = root.classList.toggle("dark");
+        localStorage.setItem("theme", dark ? "dark" : "light");
+        this.textContent = dark ? "☀️" : "🌙";
+    });
+    (function () {
+        var toggle = document.getElementById("theme-toggle");
+        toggle.textContent = document.documentElement.classList.contains("dark") ? "☀️" : "🌙";
+    })();
+</script>
 </body>
 </html>

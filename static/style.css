@@ -207,3 +207,40 @@ section { overflow-x: auto; }
     cursor: pointer;
 }
 .button-link:hover { background: var(--primary-dark); }
+
+/* Donker thema: te schakelen via de knop in de header of de
+   systeeminstelling; de voorkeur wordt in de browser onthouden. */
+html.dark {
+    --primary: #4a9d6f;
+    --primary-dark: #3e8e5f;
+    --bg: #14181a;
+    --card: #1e2427;
+    --text: #e4e7e6;
+    --muted: #9aa5a3;
+    --border: #39424a;
+    --danger: #e06c75;
+    --warning: #d9a35a;
+}
+
+html.dark body { color: var(--text); }
+html.dark .tool-image { background: #262d31; }
+html.dark .flash.success { background: #1d3328; color: #9fd4b4; }
+html.dark .flash.error { background: #3a2226; color: #f0a3a3; }
+html.dark .flash.warning { background: #3a3222; color: #e8c98a; }
+html.dark .status.beschikbaar { background: #1d3328; color: #9fd4b4; }
+html.dark .status.aangevraagd { background: #3a3222; color: #e8c98a; }
+html.dark .status.uitgeleend { background: #22303f; color: #a3c4f0; }
+html.dark .status.teruggekeerd { background: #2b3236; color: #b9c2c0; }
+html.dark .status.geweigerd { background: #3a2226; color: #f0a3a3; }
+html.dark .view-toggle .toggle { background: transparent; color: var(--muted); }
+html.dark .view-toggle .toggle.active { background: var(--primary); color: #fff; }
+html.dark .link-remove { color: var(--danger); }
+
+.theme-toggle {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: .25rem .55rem;
+    font-size: 1rem;
+    cursor: pointer;
+}
