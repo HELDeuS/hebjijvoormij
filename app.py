@@ -351,6 +351,13 @@ def tool_image(tool_id):
     if not tool:
         flash("Gereedschap niet gevonden.", "error")
         return redirect(url_for("tools"))
+    if not _can_manage(tool):
+        flash(
+            "Alleen de eigenaar of de beheerder kan het plaatje van dit "
+            "gereedschap beheren.",
+            "error",
+        )
+        return redirect(url_for("tools"))
     action = request.form.get("action")
     if action == "search":
         image_path = find_and_store_image(

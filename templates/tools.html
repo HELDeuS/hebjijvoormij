@@ -140,6 +140,7 @@
                         </form>
                     </div>
                     {% endif %}
+                    {% if friend and (friend.is_admin or tool.owner_id == friend.id) %}
                     <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" enctype="multipart/form-data" class="inline upload-form">
                         <input type="hidden" name="action" value="upload">
                         <input type="file" name="image_file" accept="image/*" required>
@@ -154,6 +155,7 @@
                         <input type="hidden" name="action" value="remove">
                         <button type="submit" class="reject">Verwijderen</button>
                     </form>
+                    {% endif %}
                     {% endif %}
                 </div>
             </div>
