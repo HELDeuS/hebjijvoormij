@@ -623,43 +623,32 @@ def create_circle(name, creator_id):
 
 
 def get_circles(friend_id=None):
-    """Geeft alle kringen terug, of alleen de kringen waar de vriend lid van is.
-    Elke kring bevat het aantal leden en of de opgevraagde vriend
-    kringbeheerder is."""
+    """Geeft alle kringen terug, of alleen de kringen waar de vriend lid van
+    is. Elke kring bevat het aantal leden en of de opgevraagde vriend
+    kringbeheerder is. Ledenaantal en kringbeheerderschap worden via
+    subqueries opgehaald, zodat een kring nooit meer dan één rij oplevert."""
     with Database() as db:
         if friend_id is None:
             return db._query(
                 """
-                SELECT c.*, COUNT(cm.id) AS member_count,
-                       EXISTS(SELECT 1 FROM circle_members x
-                              WHERE x.circle_id = c.id AND x.friend_id = %s
-                                 AND x.is_circle_admin = 1) AS is_circle_admin
+                SELECT c.*,
+                       (SELECT COUNT(*) FROM circle_members x
+                        WHERE x.circle_id = c.id) AS member_count
                 FROM circles c
-                LEFT JOIN circle_members cm ON cm.circle_id = c.id
-                GROUP BY c.id
-                ORDER BY c.name
-                """,
-                (friend_id,),
-            ) if friend_id else db._query(
-                """
-                SELECT c.*, COUNT(cm.id) AS member_count
-                FROM circles c
-                LEFT JOIN circle_members cm ON cm.circle_id = c.id
-                GROUP BY c.id
                 ORDER BY c.name
                 """
             )
         return db._query(
             """
-            SELECT c.*, COUNT(cm.id) AS member_count,
-                   cm.is_circle_admin,
+            SELECT c.*,
+                   (SELECT COUNT(*) FROM circle_members x
+                    WHERE x.circle_id = c.id) AS member_count,
                    EXISTS(SELECT 1 FROM circle_members x
                           WHERE x.circle_id = c.id AND x.friend_id = %s
                              AND x.is_circle_admin = 1) AS is_circle_admin
             FROM circles c
             JOIN circle_members my ON my.circle_id = c.id AND my.friend_id = %s
-            LEFT JOIN circle_members cm ON cm.circle_id = c.id
-            GROUP BY c.id, cm.is_circle_admin
+            GROUP BY c.id
             ORDER BY c.name
             """,
             (friend_id, friend_id),
