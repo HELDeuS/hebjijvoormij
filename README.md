@@ -4,8 +4,12 @@ gereedschap uitleensysteem
 
 ## Functies
 
-- **Vrienden** – de beheerder registreert vrienden met naam, e-mail en
-  telefoonnummer; elke vriend logt in met een eigen wachtwoord.
+- **Accounts** – iedereen kan zichzelf registreren; de beheerder keurt
+  het account goed. Gebruikers kunnen hun eigen account verwijderen en
+  de beheerder kan accounts op non-actief zetten met een reden (zichtbaar
+  bij het inloggen). De hoofdbeheerder kan extra beheerders aanwijzen
+  met dezelfde rechten, behalve het verwijderen van het
+  hoofdbeheer-account.
 - **Gereedschapscatalogus** – registreer gereedschap per eigenaar, met
   omschrijving en categorie. De catalogus is te bekijken als kaarten
   of als sorteerbare lijst (Soort, Categorie, Merk, Eigenaar, Status);
@@ -117,10 +121,10 @@ Zie `.env.example` voor een compleet voorbeeldbestand.
    (aanpasbaar via `ADMIN_EMAIL` en `ADMIN_PASSWORD` in de omgeving).
    Bij de eerste login is de beheerder verplicht een nieuw wachtwoord
    te kiezen.
-2. De beheerder registreert vrienden onder **Vrienden** met naam,
-   e-mailadres en startwachtwoord; elke nieuwe vriend kiest bij de
-   eerste login een eigen wachtwoord. Gewone vrienden kunnen zelf geen
-   nieuwe vrienden aanmaken.
+2. Nieuwe gebruikers kunnen zichzelf registreren via de link op de
+   loginpagina; de beheerder keurt het account goed (of wijst het af)
+   onder **Vrienden**. De beheerder kan ook zelf accounts aanmaken,
+   aanpassen, op non-actief zetten (met reden) en verwijderen.
 3. De beheerder kan bestaande accounts aanpassen (naam, e-mail,
    telefoon) en een nieuw startwachtwoord instellen via **Aanpassen**
    in de vriendenlijst - ook het eigen account van de beheerder,

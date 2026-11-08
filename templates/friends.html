@@ -1,6 +1,34 @@
 {% extends "base.html" %}
 {% block title %}Vrienden - hebjijvoormij{% endblock %}
 {% block content %}
+{% if friend and friend.is_admin and pending %}
+<section>
+    <h2>Accounts ter goedkeuring</h2>
+    <table>
+        <thead>
+            <tr><th>Naam</th><th>E-mail</th><th>Actie</th></tr>
+        </thead>
+        <tbody>
+            {% for f in pending %}
+            <tr>
+                <td>{{ f.name }}</td>
+                <td>{{ f.email }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('friend_approve', friend_id=f.id) }}" class="inline">
+                        <button type="submit">Goedkeuren</button>
+                    </form>
+                    <form method="post" action="{{ url_for('friend_delete', friend_id=f.id) }}" class="inline"
+                          onsubmit="return confirm('Aanvraag van \'{{ f.name }}\' afwijzen?');">
+                        <button type="submit" class="reject">Afwijzen</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endif %}
+
 <section>
     <h2>Nieuwe vriend registreren</h2>
     {% if friend and friend.is_admin %}
@@ -22,7 +50,7 @@
     {% if friends_list %}
     <table>
         <thead>
-            <tr><th>Naam</th><th>E-mail</th><th>Telefoon</th><th>Inlogstatus</th><th></th></tr>
+            <tr><th>Naam</th><th>E-mail</th><th>Telefoon</th><th>Status</th><th>Acties</th></tr>
         </thead>
         <tbody>
             {% for f in friends_list %}
@@ -31,18 +59,53 @@
                 <td>{{ f.email or "-" }}</td>
                 <td>{{ f.phone or "-" }}</td>
                 <td>
-                    {% if f.must_change_password %}
-                    <span class="status aangevraagd">Nog geen eigen wachtwoord</span>
-                    {% elif f.password_hash %}
+                    {% if f.status == 'actief' %}
                     <span class="status beschikbaar">Actief</span>
+                    {% elif f.status == 'in_behandeling' %}
+                    <span class="status aangevraagd">In behandeling</span>
                     {% else %}
-                    <span class="status aangevraagd">Nog geen wachtwoord</span>
+                    <span class="status geweigerd">Non-actief</span>
                     {% endif %}
                 </td>
                 <td>
                     {% if friend and friend.is_admin %}
                     <a href="{{ url_for('friend_edit', friend_id=f.id) }}" class="button-link">Aanpassen</a>
-                    {% else %}-{% endif %}
+                    {% endif %}
+                    {% if friend and friend.is_admin and not f.is_super_admin %}
+                        {% if f.status == 'actief' %}
+                        <form method="post" action="{{ url_for('friend_status', friend_id=f.id) }}" class="inline">
+                            <input type="hidden" name="action" value="deactivate">
+                            <input type="text" name="reason" placeholder="reden (optioneel)" class="reason-input">
+                            <button type="submit" class="reject">Non-actief</button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{{ url_for('friend_status', friend_id=f.id) }}" class="inline">
+                            <input type="hidden" name="action" value="activate">
+                            <button type="submit">Activeren</button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
+                    {% if friend and friend.is_super_admin and not f.is_super_admin %}
+                        {% if f.is_admin %}
+                        <form method="post" action="{{ url_for('friend_admin', friend_id=f.id) }}" class="inline">
+                            <input type="hidden" name="action" value="demote">
+                            <button type="submit" class="return">Geen beheerder</button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{{ url_for('friend_admin', friend_id=f.id) }}" class="inline">
+                            <input type="hidden" name="action" value="promote">
+                            <button type="submit">Beheerder</button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
+                    {% if (friend and f.id == friend.id) or (friend and friend.is_admin) %}
+                        {% if not f.is_super_admin %}
+                        <form method="post" action="{{ url_for('friend_delete', friend_id=f.id) }}" class="inline"
+                              onsubmit="return confirm('Account van \'{{ f.name }}\' verwijderen? Alle gereedschap en kringen gaan mee.');">
+                            <button type="submit" class="link-remove" title="Account verwijderen">🗑</button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

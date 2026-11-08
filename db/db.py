@@ -152,9 +152,17 @@ def ensure_schema():
         migrations = {
             "password_hash": "ALTER TABLE friends ADD COLUMN password_hash VARCHAR(255)",
             "is_admin": "ALTER TABLE friends ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0",
+            "is_super_admin": (
+                "ALTER TABLE friends ADD COLUMN is_super_admin TINYINT(1) NOT NULL DEFAULT 0"
+            ),
             "must_change_password": (
                 "ALTER TABLE friends ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0"
             ),
+            "status": (
+                "ALTER TABLE friends ADD COLUMN status ENUM('in_behandeling', 'actief', 'nonactief') "
+                "NOT NULL DEFAULT 'actief'"
+            ),
+            "deactivation_reason": "ALTER TABLE friends ADD COLUMN deactivation_reason TEXT",
         }
         for column, statement in migrations.items():
             if column not in existing:
@@ -250,6 +258,92 @@ def reset_friend_password(friend_id, password_hash):
         )
 
 
+def register_friend(name, email, password_hash):
+    """Eigen registratie door een nieuwe gebruiker; wacht op goedkeuring."""
+    if not email or get_friend_by_email(email):
+        return None
+    with Database() as db:
+        try:
+            return db._execute(
+                "INSERT INTO friends (name, email, phone, password_hash, status) "
+                "VALUES (%s, %s, '', %s, 'in_behandeling')",
+                (name, email, password_hash),
+            )
+        except mysql.connector.errors.IntegrityError:
+            return None
+
+
+def approve_friend(friend_id):
+    with Database() as db:
+        db._execute(
+            "UPDATE friends SET status = 'actief' WHERE id = %s", (friend_id,)
+        )
+
+
+def set_friend_status(friend_id, status, reason=None):
+    with Database() as db:
+        if status == "nonactief":
+            db._execute(
+                "UPDATE friends SET status = 'nonactief', deactivation_reason = %s "
+                "WHERE id = %s",
+                (reason, friend_id),
+            )
+        else:
+            db._execute(
+                "UPDATE friends SET status = %s, deactivation_reason = NULL "
+                "WHERE id = %s",
+                (status, friend_id),
+            )
+
+
+def set_friend_admin(friend_id, is_admin):
+    with Database() as db:
+        db._execute(
+            "UPDATE friends SET is_admin = %s WHERE id = %s",
+            (is_admin, friend_id),
+        )
+
+
+def delete_friend(friend_id):
+    """Verwijdert een account inclusief gereedschap, leningen en kringen.
+    Weigert zolang gereedschap van dit account is uitgeleend of aangevraagd.
+    Geeft (True, None) of (False, melding) terug."""
+    with Database() as db:
+        active = db._query(
+            """
+            SELECT t.name FROM loans l
+            JOIN tools t ON t.id = l.tool_id
+            WHERE t.owner_id = %s AND l.status IN ('aangevraagd', 'uitgeleend')
+            LIMIT 1
+            """,
+            (friend_id,),
+        )
+        if active:
+            return False, (
+                f"Kan account niet verwijderen: gereedschap "
+                f"'{active[0]['name']}' is nog uitgeleend of aangevraagd."
+            )
+        db._execute("DELETE FROM loans WHERE borrower_id = %s", (friend_id,))
+        db._execute(
+            "DELETE FROM loans WHERE tool_id IN (SELECT id FROM tools WHERE owner_id = %s)",
+            (friend_id,),
+        )
+        db._execute(
+            "DELETE FROM tool_links WHERE tool_id IN (SELECT id FROM tools WHERE owner_id = %s)",
+            (friend_id,),
+        )
+        db._execute(
+            "DELETE FROM tool_links WHERE linked_tool_id IN "
+            "(SELECT id FROM tools WHERE owner_id = %s)",
+            (friend_id,),
+        )
+        db._execute("DELETE FROM tools WHERE owner_id = %s", (friend_id,))
+        db._execute("DELETE FROM circles WHERE created_by = %s", (friend_id,))
+        db._execute("DELETE FROM circle_members WHERE friend_id = %s", (friend_id,))
+        db._execute("DELETE FROM friends WHERE id = %s", (friend_id,))
+        return True, None
+
+
 def ensure_admin():
     """Maakt de beheerder aan met de vooraf bekende standaardgegevens als er
     nog geen beheerder bestaat. De beheerder moet bij de eerste login een
@@ -260,7 +354,8 @@ def ensure_admin():
     password = os.environ.get("ADMIN_PASSWORD", "beheer123")
     with Database() as db:
         rows = db._query(
-            "SELECT id, email FROM friends WHERE is_admin = 1 LIMIT 1"
+            "SELECT id, email, is_super_admin FROM friends "
+            "WHERE is_admin = 1 LIMIT 1"
         )
         if rows:
             if not rows[0]["email"]:
@@ -268,11 +363,17 @@ def ensure_admin():
                     "UPDATE friends SET email = %s WHERE id = %s",
                     (email, rows[0]["id"]),
                 )
+            if not rows[0].get("is_super_admin"):
+                db._execute(
+                    "UPDATE friends SET is_super_admin = 1 WHERE id = %s",
+                    (rows[0]["id"],),
+                )
             return
         try:
             db._execute(
                 "INSERT INTO friends (name, email, phone, password_hash, "
-                "is_admin, must_change_password) VALUES (%s, %s, %s, %s, 1, 1)",
+                "is_admin, is_super_admin, must_change_password) "
+                "VALUES (%s, %s, %s, %s, 1, 1, 1)",
                 (name, email, "", generate_password_hash(password)),
             )
         except mysql.connector.errors.IntegrityError:

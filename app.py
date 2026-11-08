@@ -19,10 +19,12 @@ from db.db import (
     add_friend,
     add_tool,
     add_tool_link,
+    approve_friend,
     approve_loan,
     create_circle,
     create_loan_request,
     delete_circle,
+    delete_friend,
     delete_tool,
     ensure_admin,
     ensure_schema,
@@ -50,7 +52,10 @@ from db.db import (
     reset_friend_password,
     reject_loan,
     return_loan,
+    register_friend,
+    set_friend_admin,
     set_friend_password,
+    set_friend_status,
     set_tool_image,
     update_circle,
     update_friend,
@@ -92,7 +97,37 @@ def login_required(view):
 @app.before_request
 def load_current_friend():
     friend_id = session.get("friend_id")
-    g.friend = get_friend(friend_id) if friend_id else None
+    friend = get_friend(friend_id) if friend_id else None
+    if friend and friend.get("status") != "actief":
+        session.clear()
+        friend = None
+    g.friend = friend
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if g.friend:
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+        if not name or not email or len(password) < 6:
+            flash(
+                "Naam en e-mail zijn verplicht en het wachtwoord moet "
+                "minstens 6 tekens zijn.",
+                "error",
+            )
+        elif register_friend(name, email, generate_password_hash(password)):
+            flash(
+                "Je account is aangemaakt en wacht op goedkeuring door de "
+                "beheerder.",
+                "success",
+            )
+            return redirect(url_for("login"))
+        else:
+            flash("Deze naam of dit e-mailadres is al in gebruik.", "error")
+    return render_template("register.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -115,6 +150,19 @@ def login():
         friend = get_friend_by_email(email)
         if not friend:
             flash("Onbekend e-mailadres. Ben je al geregistreerd als vriend?", "error")
+        elif friend["status"] == "in_behandeling":
+            flash(
+                "Je account wacht nog op goedkeuring door de beheerder.",
+                "warning",
+            )
+        elif friend["status"] == "nonactief":
+            reason = friend["deactivation_reason"]
+            flash(
+                "Je account is non-actief gesteld"
+                + (f": {reason}" if reason else "")
+                + ". Neem contact op met de beheerder.",
+                "error",
+            )
         elif friend["password_hash"] is None:
             set_friend_password(friend["id"], generate_password_hash(password))
             session["friend_id"] = friend["id"]
@@ -203,7 +251,95 @@ def friends():
                     "success",
                 )
         return redirect(url_for("friends"))
-    return render_template("friends.html", friends_list=get_friends())
+    pending = [f for f in get_friends() if f.get("status") == "in_behandeling"]
+    return render_template(
+        "friends.html", friends_list=get_friends(), pending=pending
+    )
+
+
+@app.route("/friends/<int:friend_id>/approve", methods=["POST"])
+@login_required
+def friend_approve(friend_id):
+    if not g.friend["is_admin"]:
+        flash("Alleen de beheerder kan accounts goedkeuren.", "error")
+        return redirect(url_for("friends"))
+    friend = get_friend(friend_id)
+    if friend and friend["status"] == "in_behandeling":
+        approve_friend(friend_id)
+        flash(f"Account van {friend['name']} is goedgekeurd.", "success")
+    return redirect(url_for("friends"))
+
+
+@app.route("/friends/<int:friend_id>/status", methods=["POST"])
+@login_required
+def friend_status(friend_id):
+    me = g.friend
+    if not me["is_admin"]:
+        flash("Alleen de beheerder kan accounts op non-actief zetten.", "error")
+        return redirect(url_for("friends"))
+    friend = get_friend(friend_id)
+    if not friend:
+        flash("Vriend niet gevonden.", "error")
+        return redirect(url_for("friends"))
+    if friend["is_super_admin"]:
+        flash("De hoofdbeheerder kan niet op non-actief worden gezet.", "error")
+        return redirect(url_for("friends"))
+    action = request.form.get("action")
+    if action == "deactivate":
+        reason = request.form.get("reason", "").strip()
+        set_friend_status(friend_id, "nonactief", reason or None)
+        flash(f"Account van {friend['name']} is non-actief gezet.", "success")
+    elif action == "activate":
+        set_friend_status(friend_id, "actief")
+        flash(f"Account van {friend['name']} is weer actief.", "success")
+    return redirect(url_for("friends"))
+
+
+@app.route("/friends/<int:friend_id>/admin", methods=["POST"])
+@login_required
+def friend_admin(friend_id):
+    me = g.friend
+    if not me["is_super_admin"]:
+        flash("Alleen de hoofdbeheerder kan beheerders aanwijzen.", "error")
+        return redirect(url_for("friends"))
+    friend = get_friend(friend_id)
+    if not friend or friend["is_super_admin"]:
+        flash("Dit account kan niet gewijzigd worden.", "error")
+        return redirect(url_for("friends"))
+    action = request.form.get("action")
+    if action == "promote":
+        set_friend_admin(friend_id, 1)
+        flash(f"{friend['name']} is nu beheerder.", "success")
+    elif action == "demote":
+        set_friend_admin(friend_id, 0)
+        flash(f"{friend['name']} is geen beheerder meer.", "success")
+    return redirect(url_for("friends"))
+
+
+@app.route("/friends/<int:friend_id>/delete", methods=["POST"])
+@login_required
+def friend_delete(friend_id):
+    me = g.friend
+    friend = get_friend(friend_id)
+    if not friend:
+        flash("Vriend niet gevonden.", "error")
+        return redirect(url_for("friends"))
+    if friend_id != me["id"] and not me["is_admin"]:
+        flash("Je kunt alleen je eigen account verwijderen.", "error")
+        return redirect(url_for("friends"))
+    if friend["is_super_admin"]:
+        flash("De hoofdbeheerder kan niet verwijderd worden.", "error")
+        return redirect(url_for("friends"))
+    ok, message = delete_friend(friend_id)
+    if not ok:
+        flash(message, "error")
+        return redirect(url_for("friends"))
+    if friend_id == me["id"]:
+        session.clear()
+        flash("Je account is verwijderd. Tot ziens!", "success")
+        return redirect(url_for("login"))
+    flash(f"Account van {friend['name']} is verwijderd.", "success")
+    return redirect(url_for("friends"))
 
 
 @app.route("/circles", methods=["GET", "POST"])

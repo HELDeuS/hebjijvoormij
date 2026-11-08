@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Registreren - hebjijvoormij{% endblock %}
+{% block content %}
+<section class="login-box">
+    <h2>Account aanmaken</h2>
+    <form method="post">
+        <label>Naam* <input type="text" name="name" required autofocus></label>
+        <label>E-mail* <input type="email" name="email" required></label>
+        <label>Wachtwoord* <input type="password" name="password" minlength="6" required></label>
+        <button type="submit">Registreren</button>
+        <a href="{{ url_for('login') }}" class="hint">Terug naar inloggen</a>
+    </form>
+    <p class="hint">Na registratie keurt de beheerder je account goed; daarna kun je inloggen.</p>
+</section>
+{% endblock %}

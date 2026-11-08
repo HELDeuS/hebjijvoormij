@@ -5,7 +5,10 @@ CREATE TABLE IF NOT EXISTS friends (
     phone VARCHAR(50),
     password_hash VARCHAR(255),
     is_admin TINYINT(1) NOT NULL DEFAULT 0,
+    is_super_admin TINYINT(1) NOT NULL DEFAULT 0,
     must_change_password TINYINT(1) NOT NULL DEFAULT 0,
+    status ENUM('in_behandeling', 'actief', 'nonactief') NOT NULL DEFAULT 'actief',
+    deactivation_reason TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
