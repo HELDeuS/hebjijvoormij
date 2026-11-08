@@ -30,8 +30,9 @@ gereedschap uitleensysteem
   `aangevraagd` → `uitgeleend` → `teruggekeerd` (of `geweigerd`).
 - **Vriendenkringen** – iedereen kan een kring aanmaken en wordt dan
   automatisch kringbeheerder; die kan leden toevoegen en verwijderen.
-  Je ziet alleen gereedschap van vrienden met wie je een kring deelt.
-  De beheerder kan kringen hernoemen en verwijderen.
+  De beheerder kan bij het aanmaken een andere kringbeheerder kiezen
+  (bv. zichzelf). Je ziet alleen gereedschap van vrienden met wie je
+  een kring deelt. De beheerder kan kringen hernoemen en verwijderen.
 - **Overzichten** – openstaande uitleningen en verzoeken, per-vriend statistieken,
   en een persoonlijk transactieoverzicht.
 

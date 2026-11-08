@@ -5,9 +5,18 @@
     <h2>Nieuwe kring aanmaken</h2>
     <form method="post">
         <label>Naam* <input type="text" name="name" placeholder="bv. Buurtklussers" required></label>
+        {% if friend and friend.is_admin %}
+        <label>Kringbeheerder*
+            <select name="circle_admin_id" required>
+                {% for f in friends_list %}
+                <option value="{{ f.id }}" {% if f.id == friend.id %}selected{% endif %}>{{ f.name }} ({{ f.email }})</option>
+                {% endfor %}
+            </select>
+        </label>
+        {% endif %}
         <button type="submit">Aanmaken</button>
     </form>
-    <p class="hint">Iedereen kan een kring aanmaken; de maker wordt automatisch kringbeheerder en kan leden toevoegen en verwijderen.</p>
+    <p class="hint">Iedereen kan een kring aanmaken; de maker wordt automatisch kringbeheerder en kan leden toevoegen en verwijderen. De beheerder kan bij het aanmaken een andere kringbeheerder kiezen (bv. zichzelf).</p>
 </section>
 
 <section>

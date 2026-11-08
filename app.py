@@ -212,16 +212,30 @@ def circles():
     me = g.friend
     if request.method == "POST":
         name = request.form.get("name", "").strip()
+        admin_id = me["id"]
+        chosen = request.form.get("circle_admin_id", type=int)
+        if me["is_admin"] and chosen:
+            chosen_friend = get_friend(chosen)
+            if chosen_friend:
+                admin_id = chosen
         if not name:
             flash("Geef de kring een naam.", "error")
-        elif create_circle(name, me["id"]) is None:
+        elif create_circle(name, admin_id) is None:
             flash("Er bestaat al een kring met deze naam.", "error")
         else:
-            flash(
-                f"Kring '{name}' is aangemaakt; je bent automatisch "
-                "kringbeheerder.",
-                "success",
-            )
+            if admin_id == me["id"]:
+                flash(
+                    f"Kring '{name}' is aangemaakt; je bent automatisch "
+                    "kringbeheerder.",
+                    "success",
+                )
+            else:
+                chosen_friend = get_friend(admin_id)
+                flash(
+                    f"Kring '{name}' is aangemaakt; {chosen_friend['name']} "
+                    "is kringbeheerder.",
+                    "success",
+                )
         return redirect(url_for("circles"))
     my_circles = get_circles(me["id"])
     all_circles = get_circles() if me["is_admin"] else []
