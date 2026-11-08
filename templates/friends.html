@@ -30,7 +30,15 @@
                 <td>{{ f.name }}</td>
                 <td>{{ f.email or "-" }}</td>
                 <td>{{ f.phone or "-" }}</td>
-                <td>{{ f.created_at.strftime("%d-%m-%Y") }}</td>
+                <td>
+                    {% if f.must_change_password %}
+                    <span class="status aangevraagd">Nog geen eigen wachtwoord</span>
+                    {% elif f.password_hash %}
+                    <span class="status beschikbaar">Actief</span>
+                    {% else %}
+                    <span class="status aangevraagd">Nog geen wachtwoord</span>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>

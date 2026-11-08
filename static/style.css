@@ -164,3 +164,15 @@ footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 1r
 
 .user-bar { display: flex; gap: .75rem; align-items: center; }
 .login-box { max-width: 480px; margin: 0 auto; }
+
+.flash.warning { background: #fdf3d7; color: #7a5301; }
+
+section { overflow-x: auto; }
+
+@media (max-width: 640px) {
+    header { padding: .75rem 1rem; }
+    nav { flex-wrap: wrap; gap: .6rem; }
+    th, td { padding: .35rem .5rem; font-size: .85rem; }
+    form { flex-direction: column; align-items: stretch; }
+    input, select { min-width: 0; }
+}
