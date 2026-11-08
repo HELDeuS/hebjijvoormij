@@ -44,6 +44,7 @@
                 <th><a href="{{ url_for('tools', view='list', sort='brand', dir='desc' if sort == 'brand' and direction == 'asc' else 'asc') }}">Merk {{ '▲' if sort == 'brand' and direction == 'asc' else ('▼' if sort == 'brand' else '') }}</a></th>
                 <th><a href="{{ url_for('tools', view='list', sort='owner', dir='desc' if sort == 'owner' and direction == 'asc' else 'asc') }}">Eigenaar {{ '▲' if sort == 'owner' and direction == 'asc' else ('▼' if sort == 'owner' else '') }}</a></th>
                 <th><a href="{{ url_for('tools', view='list', sort='status', dir='desc' if sort == 'status' and direction == 'asc' else 'asc') }}">Status {{ '▲' if sort == 'status' and direction == 'asc' else ('▼' if sort == 'status' else '') }}</a></th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -60,6 +61,7 @@
                     <span class="status beschikbaar">Beschikbaar</span>
                     {% endif %}
                 </td>
+                <td><a href="{{ url_for('tool_edit', tool_id=tool.id) }}" class="edit-link">Aanpassen</a></td>
             </tr>
             {% endfor %}
         </tbody>
@@ -125,6 +127,7 @@
                     {% endif %}
                 </p>
                 <div class="tool-actions">
+                    <a href="{{ url_for('tool_edit', tool_id=tool.id) }}" class="edit-link">Aanpassen</a>
                     <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" enctype="multipart/form-data" class="inline upload-form">
                         <input type="hidden" name="action" value="upload">
                         <input type="file" name="image_file" accept="image/*" required>

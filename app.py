@@ -41,6 +41,7 @@ from db.db import (
     return_loan,
     set_friend_password,
     set_tool_image,
+    update_tool,
 )
 from images import find_and_store_image, upload_image
 
@@ -235,6 +236,46 @@ def tools():
         view=view,
         sort=sort,
         direction=direction,
+        categories=get_distinct_values("category"),
+        brands=get_distinct_values("brand"),
+    )
+
+
+@app.route("/tools/<int:tool_id>/edit", methods=["GET", "POST"])
+@login_required
+def tool_edit(tool_id):
+    tool = get_tool(tool_id)
+    if not tool:
+        flash("Gereedschap niet gevonden.", "error")
+        return redirect(url_for("tools"))
+    if request.method == "POST":
+        owner_id = request.form.get("owner_id", type=int)
+        name = request.form.get("name", "").strip()
+        description = request.form.get("description", "").strip()
+        category = request.form.get("category", "").strip()
+        brand = request.form.get("brand", "").strip()
+        model = request.form.get("model", "").strip()
+        if not owner_id or not name:
+            flash("Eigenaar en soort gereedschap zijn verplicht.", "error")
+        elif update_tool(tool_id, owner_id, name, description, category, brand, model):
+            flash(f"Gereedschap '{name}' is aangepast.", "success")
+            return redirect(url_for("tools"))
+        else:
+            flash(
+                "Deze combinatie van eigenaar en soort gereedschap bestaat al.",
+                "error",
+            )
+        tool.update(
+            owner_id=owner_id or tool["owner_id"],
+            name=name or tool["name"],
+            description=description,
+            category=category,
+            brand=brand,
+            model=model,
+        )
+    return render_template(
+        "tool_edit.html",
+        tool=tool,
         categories=get_distinct_values("category"),
         brands=get_distinct_values("brand"),
     )

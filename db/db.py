@@ -255,6 +255,19 @@ def get_tools(owner_id=None, available_only=False):
         return db.get_tools(owner_id=owner_id, available_only=available_only)
 
 
+def update_tool(tool_id, owner_id, name, description, category, brand, model):
+    with Database() as db:
+        try:
+            db._execute(
+                "UPDATE tools SET owner_id = %s, name = %s, description = %s, "
+                "category = %s, brand = %s, model = %s WHERE id = %s",
+                (owner_id, name, description, category, brand, model, tool_id),
+            )
+            return True
+        except mysql.connector.errors.IntegrityError:
+            return False
+
+
 def get_distinct_values(column):
     """Geeft alle eerder gebruikte waardes van een kolom van tools terug."""
     allowed = {"category", "brand"}
