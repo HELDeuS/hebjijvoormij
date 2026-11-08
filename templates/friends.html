@@ -6,7 +6,7 @@
     {% if friend and friend.is_admin %}
     <form method="post">
         <label>Naam* <input type="text" name="name" required></label>
-        <label>E-mail <input type="email" name="email"></label>
+        <label>E-mail* <input type="email" name="email" required></label>
         <label>Telefoon <input type="tel" name="phone"></label>
         <label>Wachtwoord* <input type="password" name="password" minlength="6" required></label>
         <button type="submit">Registreren</button>

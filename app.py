@@ -24,7 +24,7 @@ from db.db import (
     get_combi_suggestions,
     get_distinct_values,
     get_friend,
-    get_friend_by_name,
+    get_friend_by_email,
     get_friends,
     get_friend_stats,
     get_friend_tools,
@@ -97,12 +97,12 @@ def login():
             exc,
         )
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         new_password = request.form.get("new_password", "")
-        friend = get_friend_by_name(name)
+        friend = get_friend_by_email(email)
         if not friend:
-            flash("Onbekende naam. Ben je al geregistreerd als vriend?", "error")
+            flash("Onbekend e-mailadres. Ben je al geregistreerd als vriend?", "error")
         elif friend["password_hash"] is None:
             set_friend_password(friend["id"], generate_password_hash(password))
             session["friend_id"] = friend["id"]
@@ -121,7 +121,7 @@ def login():
                     "minstens 6 tekens.",
                     "warning",
                 )
-                return render_template("login.html", show_change=True, name=name)
+                return render_template("login.html", show_change=True, email=email)
             set_friend_password(friend["id"], generate_password_hash(new_password))
             session["friend_id"] = friend["id"]
             flash(
@@ -159,8 +159,12 @@ def friends():
         email = request.form.get("email", "").strip()
         phone = request.form.get("phone", "").strip()
         password = request.form.get("password", "")
-        if not name or len(password) < 6:
-            flash("Naam is verplicht en het wachtwoord moet minstens 6 tekens zijn.", "error")
+        if not name or not email or len(password) < 6:
+            flash(
+                "Naam en e-mail zijn verplicht en het wachtwoord moet "
+                "minstens 6 tekens zijn.",
+                "error",
+            )
         else:
             friend_id = add_friend(
                 name,
@@ -170,7 +174,7 @@ def friends():
                 must_change_password=True,
             )
             if friend_id is None:
-                flash("Deze vriend bestaat al.", "error")
+                flash("Deze naam of dit e-mailadres is al in gebruik.", "error")
             else:
                 flash(
                     f"Vriend {name} is geregistreerd; "
@@ -466,6 +470,7 @@ def ensure_admin_command():
     from db.db import get_friend_by_name
 
     name = os.environ.get("ADMIN_NAME", "admin")
+    email = os.environ.get("ADMIN_EMAIL", "admin@localhost")
     try:
         ensure_schema()
         ensure_admin()
@@ -476,24 +481,27 @@ def ensure_admin_command():
             ".env kloppen (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)."
         )
         return 1
-    admin = get_friend_by_name(name)
+    admin = get_friend_by_email(email)
     if admin and admin["is_admin"]:
         state = (
             "moet nog een wachtwoord kiezen bij de eerste login"
             if admin["must_change_password"]
             else "wachtwoord al ingesteld"
         )
-        print(f"Beheerder '{name}' aanwezig (id={admin['id']}); {state}.")
+        print(
+            f"Beheerder '{name}' ({email}) aanwezig (id={admin['id']}); {state}."
+        )
         print(
             "Bestaande beheerders worden nooit automatisch gewijzigd; "
             "wijzig het admin-wachtwoord via de app of de database."
         )
     else:
-        print(f"Geen beheerder gevonden onder de naam '{name}'.")
+        print(f"Geen beheerder gevonden met e-mailadres '{email}'.")
         print(
-            "Bestaat er al een beheerder onder een andere naam? "
-            "Dan wordt ADMIN_NAME genegeerd; pas de naam in de database aan "
-            "of verwijder die beheerder en draai dit commando opnieuw."
+            "Bestaat er al een beheerder met een ander e-mailadres? "
+            "Dan worden ADMIN_NAME/ADMIN_EMAIL genegeerd; pas de gegevens in "
+            "de database aan of verwijder die beheerder en draai dit "
+            "commando opnieuw."
         )
 
 

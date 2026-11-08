@@ -48,6 +48,7 @@ gereedschap uitleensysteem
 | `DB_NAME` | `gereedschap_leensysteem` | databasenaam |
 | `SECRET_KEY` | – | ondertekening van sessies (vereist, geheim houden) |
 | `ADMIN_NAME` | `admin` | naam van de beheerder bij eerste aanmaak |
+| `ADMIN_EMAIL` | `admin@localhost` | e-mailadres (inlognaam) van de beheerder |
 | `ADMIN_PASSWORD` | `beheer123` | startwachtwoord van de beheerder |
 | `FLASK_HOST` | `127.0.0.1` | luisteradres van de app |
 | `FLASK_PORT` | `5000` | luisterpoort van de app |
@@ -81,6 +82,7 @@ Zie `.env.example` voor een compleet voorbeeldbestand.
    export FLASK_PORT=5000
    export FLASK_DEBUG=0
    export ADMIN_NAME=admin
+   export ADMIN_EMAIL=admin@localhost
    export ADMIN_PASSWORD=beheer123
    ```
 
@@ -106,15 +108,16 @@ Zie `.env.example` voor een compleet voorbeeldbestand.
 ## Gebruik
 
 1. De app maakt automatisch een **beheerder** aan met vooraf bekende
-   inloggegevens: naam `admin`, wachtwoord `beheer123` (aanpasbaar via
-   `ADMIN_NAME` en `ADMIN_PASSWORD` in de omgeving). Bij de eerste login
-   is de beheerder verplicht een nieuw wachtwoord te kiezen.
-2. De beheerder registreert vrienden onder **Vrienden** met een
-   startwachtwoord; elke nieuwe vriend kiest bij de eerste login een
-   eigen wachtwoord. Gewone vrienden kunnen zelf geen nieuwe vrienden
-   aanmaken.
-3. Log in met je naam en wachtwoord; alles wat je doet, gebeurt onder je
-   eigen account.
+   inloggegevens: e-mail `admin@localhost`, wachtwoord `beheer123`
+   (aanpasbaar via `ADMIN_EMAIL` en `ADMIN_PASSWORD` in de omgeving).
+   Bij de eerste login is de beheerder verplicht een nieuw wachtwoord
+   te kiezen.
+2. De beheerder registreert vrienden onder **Vrienden** met naam,
+   e-mailadres en startwachtwoord; elke nieuwe vriend kiest bij de
+   eerste login een eigen wachtwoord. Gewone vrienden kunnen zelf geen
+   nieuwe vrienden aanmaken.
+3. Log in met je e-mailadres en wachtwoord; alles wat je doet, gebeurt
+   onder je eigen account.
 4. Registreer gereedschap onder **Gereedschap** (kies de eigenaar).
 5. Onder **Uitleningen** maak je een leenverzoek aan; de eigenaar keurt het
    goed of wijst het af, en het gereedschap wordt teruggegeven via
@@ -123,8 +126,9 @@ Zie `.env.example` voor een compleet voorbeeldbestand.
 
 ### Inloggen en beveiliging
 
-- Elke vriend logt in met naam en wachtwoord; wachtwoorden worden gehasht
-  opgeslagen (werkzeug/scrypt) en nooit in platte tekst.
+- Elke vriend logt in met e-mailadres en wachtwoord (e-mailadressen zijn
+  uniek); wachtwoorden worden gehasht opgeslagen (werkzeug/scrypt) en
+  nooit in platte tekst.
 - Alle pagina's zijn alleen bereikbaar na inloggen.
 - Zet een sterk `SECRET_KEY`-geheim in de omgevingsvariabelen, want daarmee
   worden de sessies ondertekend.
@@ -202,6 +206,7 @@ DB_PASSWORD=kies-een-goed-wachtwoord
 DB_NAME=gereedschap_leensysteem
 SECRET_KEY=hier-je-gegenereerde-sleutel
 ADMIN_NAME=admin
+ADMIN_EMAIL=admin@localhost
 ADMIN_PASSWORD=kies-eigen-startwachtwoord
 FLASK_HOST=127.0.0.1
 FLASK_PORT=5000
@@ -209,8 +214,9 @@ FLASK_DEBUG=0
 ENV
 ```
 
-**Belangrijk bij de beheerder**: `ADMIN_NAME` en `ADMIN_PASSWORD` zijn de
-startgegevens waarmee de beheerder wordt aangemaakt. Kies een eigen
+**Belangrijk bij de beheerder**: `ADMIN_EMAIL` en `ADMIN_PASSWORD` zijn de
+startgegevens waarmee de beheerder wordt aangemaakt (het e-mailadres is
+de inlognaam). Kies een eigen
 startwachtwoord (niet de standaard `beheer123`) — de app maakt de
 beheerder bij de eerste start aan met deze gegevens en dwingt bij de
 eerste login tot het kiezen van een eigen nieuw wachtwoord. Bestaande
@@ -240,9 +246,9 @@ sudo -u hebjijvoormij bash -c 'set -a; source .env; set +a; venv/bin/python app.
 ```
 
 De app is nu bereikbaar op `http://127.0.0.1:5000`. Log in met de
-beheerdersgegevens (standaard `admin` / `beheer123`, instelbaar via
-`ADMIN_NAME` en `ADMIN_PASSWORD` in de `.env`) en kies direct een nieuw
-wachtwoord. Stop daarna met Ctrl-C en ga verder met de service-installatie.
+beheerdersgegevens (standaard `admin@localhost` / `beheer123`,
+instelbaar via `ADMIN_EMAIL` en `ADMIN_PASSWORD` in de `.env`) en kies
+direct een nieuw wachtwoord. Stop daarna met Ctrl-C en ga verder met de service-installatie.
 
 ### 6. Systemd-service
 
@@ -369,7 +375,7 @@ Wordt de beheerder niet herkend, controleer dan in deze volgorde:
    ingesteld, en wat er mis is met de database.
 3. **Bestaande beheerder wordt niet gewijzigd** — heeft de app ooit eerder
    gedraaid, dan bestaat de beheerder al met de toen geldige gegevens;
-   een latere wijziging van `ADMIN_NAME`/`ADMIN_PASSWORD` in de `.env`
+   een latere wijziging van `ADMIN_EMAIL`/`ADMIN_PASSWORD` in de `.env`
    heeft dan geen effect. Zet het wachtwoord opnieuw via de app, of
    verwijder de beheerder en draai `ensure-admin` opnieuw:
    ```sql
@@ -384,7 +390,7 @@ Wordt de beheerder niet herkend, controleer dan in deze volgorde:
    ```bash
    sudo mariadb gereedschap_leensysteem < /opt/hebjijvoormij/app/db/schema.sql
    ```
-   Het schema bevat het standaard admin-account (`admin` / `beheer123`,
+   Het schema bevat het standaard admin-account (`admin@localhost` / `beheer123`,
    met verplichte wachtwoordwijziging bij de eerste login).
 5. **Logs bekijken**: `journalctl -u hebjijvoormij -f` — fouten bij het
    aanmaken van de beheerder worden hier gelogd.

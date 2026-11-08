@@ -136,6 +136,12 @@ def ensure_schema():
                 (DB_CONFIG["database"],),
             )
         }
+        try:
+            db._execute(
+                "ALTER TABLE friends ADD UNIQUE KEY uq_email (email)"
+            )
+        except Exception:
+            pass
         migrations = {
             "password_hash": "ALTER TABLE friends ADD COLUMN password_hash VARCHAR(255)",
             "is_admin": "ALTER TABLE friends ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0",
@@ -176,6 +182,8 @@ def get_friend(friend_id):
 
 
 def add_friend(name, email, phone, password_hash=None, must_change_password=False):
+    if not email or get_friend_by_email(email):
+        return None
     with Database() as db:
         try:
             db._execute(
@@ -188,9 +196,9 @@ def add_friend(name, email, phone, password_hash=None, must_change_password=Fals
             return None
 
 
-def get_friend_by_name(name):
+def get_friend_by_email(email):
     with Database() as db:
-        rows = db._query("SELECT * FROM friends WHERE name = %s", (name,))
+        rows = db._query("SELECT * FROM friends WHERE email = %s", (email,))
         return rows[0] if rows else None
 
 
@@ -206,18 +214,27 @@ def set_friend_password(friend_id, password_hash):
 def ensure_admin():
     """Maakt de beheerder aan met de vooraf bekende standaardgegevens als er
     nog geen beheerder bestaat. De beheerder moet bij de eerste login een
-    nieuw wachtwoord kiezen."""
+    nieuw wachtwoord kiezen. Een bestaande beheerder zonder e-mailadres
+    krijgt het standaardadres toegewezen (inloggen gaat via e-mail)."""
     name = os.environ.get("ADMIN_NAME", "admin")
+    email = os.environ.get("ADMIN_EMAIL", "admin@localhost")
     password = os.environ.get("ADMIN_PASSWORD", "beheer123")
     with Database() as db:
-        rows = db._query("SELECT id FROM friends WHERE is_admin = 1 LIMIT 1")
+        rows = db._query(
+            "SELECT id, email FROM friends WHERE is_admin = 1 LIMIT 1"
+        )
         if rows:
+            if not rows[0]["email"]:
+                db._execute(
+                    "UPDATE friends SET email = %s WHERE id = %s",
+                    (email, rows[0]["id"]),
+                )
             return
         try:
             db._execute(
                 "INSERT INTO friends (name, email, phone, password_hash, "
                 "is_admin, must_change_password) VALUES (%s, %s, %s, %s, 1, 1)",
-                (name, "", "", generate_password_hash(password)),
+                (name, email, "", generate_password_hash(password)),
             )
         except mysql.connector.errors.IntegrityError:
             pass

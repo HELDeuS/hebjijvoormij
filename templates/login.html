@@ -4,7 +4,7 @@
 <section class="login-box">
     <h2>Inloggen</h2>
     <form method="post">
-        <label>Naam <input type="text" name="name" value="{{ name or '' }}" required autofocus></label>
+        <label>E-mail <input type="email" name="email" value="{{ email or '' }}" required autofocus></label>
         <label>Wachtwoord <input type="password" name="password" required></label>
         {% if show_change %}
         <label>Nieuw wachtwoord <input type="password" name="new_password" minlength="6" required></label>
