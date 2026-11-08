@@ -22,7 +22,7 @@
     {% if friends_list %}
     <table>
         <thead>
-            <tr><th>Naam</th><th>E-mail</th><th>Telefoon</th><th>Inlogstatus</th></tr>
+            <tr><th>Naam</th><th>E-mail</th><th>Telefoon</th><th>Inlogstatus</th><th></th></tr>
         </thead>
         <tbody>
             {% for f in friends_list %}
@@ -38,6 +38,11 @@
                     {% else %}
                     <span class="status aangevraagd">Nog geen wachtwoord</span>
                     {% endif %}
+                </td>
+                <td>
+                    {% if friend and friend.is_admin %}
+                    <a href="{{ url_for('friend_edit', friend_id=f.id) }}" class="button-link">Aanpassen</a>
+                    {% else %}-{% endif %}
                 </td>
             </tr>
             {% endfor %}

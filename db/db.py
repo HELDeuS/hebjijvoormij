@@ -211,6 +211,38 @@ def set_friend_password(friend_id, password_hash):
         )
 
 
+def update_friend(friend_id, name, email, phone):
+    """Werkt naam, e-mail en telefoon van een bestaand account bij.
+    Geeft een foutmelding terug bij een dubbele naam of e-mail, anders None."""
+    with Database() as db:
+        if db._query(
+            "SELECT id FROM friends WHERE name = %s AND id <> %s",
+            (name, friend_id),
+        ):
+            return "Deze naam is al in gebruik."
+        if db._query(
+            "SELECT id FROM friends WHERE email = %s AND id <> %s",
+            (email, friend_id),
+        ):
+            return "Dit e-mailadres is al in gebruik."
+        db._execute(
+            "UPDATE friends SET name = %s, email = %s, phone = %s WHERE id = %s",
+            (name, email, phone, friend_id),
+        )
+        return None
+
+
+def reset_friend_password(friend_id, password_hash):
+    """Stelt een nieuw (start)wachtwoord in; de vriend moet het bij de
+    eerste login wijzigen."""
+    with Database() as db:
+        db._execute(
+            "UPDATE friends SET password_hash = %s, must_change_password = 1 "
+            "WHERE id = %s",
+            (password_hash, friend_id),
+        )
+
+
 def ensure_admin():
     """Maakt de beheerder aan met de vooraf bekende standaardgegevens als er
     nog geen beheerder bestaat. De beheerder moet bij de eerste login een

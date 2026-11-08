@@ -38,8 +38,10 @@ from db.db import (
     init_db,
     remove_tool_image,
     remove_tool_link,
+    reset_friend_password,
     reject_loan,
     return_loan,
+    update_friend,
     set_friend_password,
     set_tool_image,
     update_tool,
@@ -183,6 +185,55 @@ def friends():
                 )
         return redirect(url_for("friends"))
     return render_template("friends.html", friends_list=get_friends())
+
+
+@app.route("/friends/<int:friend_id>/edit", methods=["GET", "POST"])
+@login_required
+def friend_edit(friend_id):
+    friend = get_friend(friend_id)
+    if not friend:
+        flash("Vriend niet gevonden.", "error")
+        return redirect(url_for("friends"))
+    if not g.friend["is_admin"]:
+        flash("Alleen de beheerder kan accounts aanpassen.", "error")
+        return redirect(url_for("friends"))
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        phone = request.form.get("phone", "").strip()
+        new_password = request.form.get("new_password", "")
+        if not name or not email:
+            flash("Naam en e-mail zijn verplicht.", "error")
+        else:
+            error = update_friend(friend_id, name, email, phone)
+            if error:
+                flash(error, "error")
+            else:
+                if friend_id == g.friend["id"]:
+                    flash(
+                        "Je eigen gegevens zijn aangepast.",
+                        "success",
+                    )
+                else:
+                    flash(f"Account van {name} is aangepast.", "success")
+                if new_password:
+                    if len(new_password) < 6:
+                        flash(
+                            "Nieuw startwachtwoord moet minstens 6 tekens zijn.",
+                            "error",
+                        )
+                    else:
+                        reset_friend_password(
+                            friend_id, generate_password_hash(new_password)
+                        )
+                        flash(
+                            "Startwachtwoord ingesteld; het moet bij de "
+                            "volgende login worden gewijzigd.",
+                            "success",
+                        )
+                return redirect(url_for("friends"))
+        friend.update(name=name or friend["name"], email=email or friend["email"], phone=phone)
+    return render_template("friend_edit.html", account=friend)
 
 
 @app.route("/tools", methods=["GET", "POST"])

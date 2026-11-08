@@ -116,13 +116,17 @@ Zie `.env.example` voor een compleet voorbeeldbestand.
    e-mailadres en startwachtwoord; elke nieuwe vriend kiest bij de
    eerste login een eigen wachtwoord. Gewone vrienden kunnen zelf geen
    nieuwe vrienden aanmaken.
-3. Log in met je e-mailadres en wachtwoord; alles wat je doet, gebeurt
+3. De beheerder kan bestaande accounts aanpassen (naam, e-mail,
+   telefoon) en een nieuw startwachtwoord instellen via **Aanpassen**
+   in de vriendenlijst - ook het eigen account van de beheerder,
+   inclusief het eigen e-mailadres (de inlognaam).
+4. Log in met je e-mailadres en wachtwoord; alles wat je doet, gebeurt
    onder je eigen account.
-4. Registreer gereedschap onder **Gereedschap** (kies de eigenaar).
-5. Onder **Uitleningen** maak je een leenverzoek aan; de eigenaar keurt het
+5. Registreer gereedschap onder **Gereedschap** (kies de eigenaar).
+6. Onder **Uitleningen** maak je een leenverzoek aan; de eigenaar keurt het
    goed of wijst het af, en het gereedschap wordt teruggegeven via
    "Terugontvangen".
-6. Het **Overzicht** toont alle openstaande leningen en statistieken per vriend.
+7. Het **Overzicht** toont alle openstaande leningen en statistieken per vriend.
 
 ### Inloggen en beveiliging
 
