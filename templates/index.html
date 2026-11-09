@@ -11,7 +11,7 @@
         <tbody>
             {% for loan in overview %}
             <tr>
-                <td>{{ loan.tool_name }}</td>
+                <td><a href="{{ url_for('loans') }}" class="tool-title-link">{{ loan.tool_name }}</a></td>
                 <td>{{ loan.owner_name }}</td>
                 <td>{{ loan.borrower_name }}</td>
                 <td><span class="status {{ loan.status }}">{{ STATUS_LABELS[loan.status] }}</span></td>

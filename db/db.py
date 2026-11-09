@@ -57,10 +57,13 @@ class Database:
         sql = """
             SELECT t.*, f.name AS owner_name,
                    l.id AS active_loan_id,
-                   l.borrower_id, l.status AS loan_status
+                   l.borrower_id, l.status AS loan_status,
+                   bf.name AS borrower_name,
+                   l.date_from, l.date_until
             FROM tools t
             JOIN friends f ON f.id = t.owner_id
             LEFT JOIN loans l ON l.tool_id = t.id AND l.status IN ('aangevraagd', 'uitgeleend')
+            LEFT JOIN friends bf ON bf.id = l.borrower_id
             WHERE 1=1
         """
         params = []
@@ -539,7 +542,8 @@ def get_friend_tools(owner_id):
         return db._query(
             """
             SELECT t.*, l.id AS loan_id, l.status AS loan_status,
-                   l.borrower_id, bf.name AS borrower_name
+                   l.borrower_id, bf.name AS borrower_name,
+                   l.date_from, l.date_until
             FROM tools t
             LEFT JOIN loans l ON l.tool_id = t.id AND l.status IN ('aangevraagd', 'uitgeleend')
             LEFT JOIN friends bf ON bf.id = l.borrower_id
@@ -956,11 +960,14 @@ def get_visible_tools(friend_id):
         return db._query(
             """
             SELECT t.*, f.name AS owner_name,
-                   l.id AS active_loan_id, l.borrower_id, l.status AS loan_status
+                   l.id AS active_loan_id, l.borrower_id, l.status AS loan_status,
+                   bf.name AS borrower_name,
+                   l.date_from, l.date_until
             FROM tools t
             JOIN friends f ON f.id = t.owner_id
             LEFT JOIN loans l ON l.tool_id = t.id
                  AND l.status IN ('aangevraagd', 'uitgeleend')
+            LEFT JOIN friends bf ON bf.id = l.borrower_id
             WHERE t.owner_id = %s OR t.owner_id IN (
                 SELECT cm2.friend_id FROM circle_members cm1
                 JOIN circle_members cm2 ON cm2.circle_id = cm1.circle_id

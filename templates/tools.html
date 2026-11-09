@@ -165,6 +165,12 @@
                     <span class="status beschikbaar">Beschikbaar</span>
                     {% endif %}
                 </p>
+                {% if friend and tool.owner_id == friend.id and tool.active_loan_id and tool.borrower_name %}
+                <p class="meta">
+                    Uitgeleend aan <strong>{{ tool.borrower_name }}</strong>
+                    {% if tool.date_from %}({{ tool.date_from | fmt_date }}{% if tool.date_until %} t/m {{ tool.date_until | fmt_date }}{% endif %}){% endif %}
+                </p>
+                {% endif %}
                 <div class="tool-actions">
                     {% if friend and (friend.is_admin or tool.owner_id == friend.id) %}
                     <div class="manage-row">

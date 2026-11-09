@@ -16,8 +16,34 @@
         <label>Vanaf* <input type="date" name="date_from" required></label>
         <label>Tot* <input type="date" name="date_until" required></label>
         <label>Notitie <input type="text" name="note" placeholder="bv. waarvoor je het gebruikt"></label>
+        <div id="combi-options">
+            {% for tool_id, options in combi_options.items() %}
+            <div class="combi-block" data-tool="{{ tool_id }}" style="display: none;">
+                <p class="hint">Goed te combineren met — aangevinkte gereedschap krijgt hetzelfde datumbereik en dezelfde notitie:</p>
+                {% for option in options %}
+                <label class="combi-option">
+                    <input type="checkbox" name="combi_tool_ids" value="{{ option.id }}">
+                    {{ option.name }} (van {{ option.owner_name }})
+                </label>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
         <button type="submit">Verzoek aanmaken</button>
     </form>
+    <script>
+        (function () {
+            var select = document.querySelector("select[name='tool_id']");
+            var blocks = document.querySelectorAll(".combi-block");
+            function update() {
+                blocks.forEach(function (b) {
+                    b.style.display = (b.dataset.tool === select.value) ? "" : "none";
+                });
+            }
+            select.addEventListener("change", update);
+            update();
+        })();
+    </script>
 </section>
 
 {% if friend %}

@@ -1136,15 +1136,34 @@ def loans():
                         f"/tools/{tool_id}",
                         tool_id,
                     )
-                    suggestions = get_combi_suggestions(friend["id"])
-                    relevant = [s for s in suggestions if s["primary_tool_id"] == tool_id]
-                    if relevant:
-                        names = ", ".join(s["name"] for s in relevant)
-                        flash(
-                            f"Tip: goed te combineren met {names} — "
-                            "kijk bij de combi-suggesties om ze mee te lenen.",
-                            "warning",
-                        )
+                    combi_ids = request.form.getlist("combi_tool_ids")
+                    for combi_id in combi_ids:
+                        if not str(combi_id).isdigit():
+                            continue
+                        combi_tool = get_tool(int(combi_id))
+                        if not combi_tool or combi_tool["owner_id"] == friend["id"]:
+                            continue
+                        if create_loan_request(
+                            int(combi_id),
+                            friend["id"],
+                            note or None,
+                            date_from,
+                            date_until,
+                        ):
+                            combi_owner = get_friend(combi_tool["owner_id"])
+                            _notify(
+                                combi_owner["id"],
+                                "leenverzoek",
+                                f"{friend['name']} wil '{combi_tool['name']}' "
+                                f"lenen van {date_from} tot {date_until}.",
+                                f"/tools/{combi_tool['id']}",
+                                combi_tool["id"],
+                            )
+                            flash(
+                                f"Combi-gereedschap '{combi_tool['name']}' is "
+                                "met hetzelfde datumbereik aangevraagd.",
+                                "success",
+                            )
                 else:
                     flash("Dit gereedschap is momenteel niet beschikbaar.", "error")
             return redirect(url_for("loans"))
@@ -1204,6 +1223,19 @@ def loans():
             t for t in get_visible_tools(friend["id"]) if not t["active_loan_id"]
         ]
     )
+    all_tools = get_tools()
+    links_map = get_linked_tools_map([t["id"] for t in all_tools])
+    combi_options = {}
+    for tool in available_tools:
+        options = []
+        for link in links_map.get(tool["id"], []):
+            linked = next(
+                (t for t in available_tools if t["id"] == link["linked_id"]), None
+            )
+            if linked:
+                options.append(linked)
+        if options:
+            combi_options[tool["id"]] = options
     # scope bepalen: beheerder -> alles; kringbeheerder -> eigen + kringen;
     # gewone gebruiker -> alleen eigen uitleningen
     if friend["is_admin"]:
@@ -1265,6 +1297,7 @@ def loans():
         transactions=get_friend_transactions(friend["id"]),
         combi_suggestions=get_combi_suggestions(friend["id"]),
         loans_list=loans_list,
+        combi_options=combi_options,
         status_filter=status_filter,
         circle_filter=circle_filter,
         filter_circles=filter_circles,

@@ -29,6 +29,12 @@
                 <span class="status beschikbaar">Beschikbaar</span>
                 {% endif %}
             </p>
+            {% if friend and tool.owner_id == friend.id and tool.loan_id and tool.borrower_name %}
+            <p class="meta">
+                Uitgeleend aan <strong>{{ tool.borrower_name }}</strong>
+                {% if tool.date_from %}({{ tool.date_from | fmt_date }}{% if tool.date_until %} t/m {{ tool.date_until | fmt_date }}{% endif %}){% endif %}
+            </p>
+            {% endif %}
             <div class="tool-actions">
                 <div class="manage-row">
                     <a href="{{ url_for('tool_edit', tool_id=tool.id) }}" class="button-link">Aanpassen</a>
