@@ -64,7 +64,7 @@ from db.db import (
     update_friend,
     update_tool,
 )
-from images import find_and_store_image, upload_image
+from images import download_image, upload_image
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-key-verander-dit")
@@ -555,19 +555,6 @@ def tools():
             flash("Dit gereedschap bestaat al.", "error")
         else:
             flash(f"Gereedschap '{name}' is geregistreerd.", "success")
-            image_path = find_and_store_image(tool_id, name, brand, model)
-            if image_path:
-                set_tool_image(tool_id, image_path)
-                flash(
-                    "Er is automatisch een plaatje opgezocht en toegevoegd.",
-                    "success",
-                )
-            else:
-                flash(
-                    "Er kon geen plaatje worden gevonden; gebruik 'Plaatje "
-                    "uploaden' op de kaart of probeer later 'Plaatje zoeken'.",
-                    "warning",
-                )
         return redirect(url_for("tools"))
     me = g.friend
     tools_list = get_tools() if me["is_admin"] else get_visible_tools(me["id"])
@@ -794,15 +781,18 @@ def tool_image(tool_id):
         )
         return redirect(url_for("tools"))
     action = request.form.get("action")
-    if action == "search":
-        image_path = find_and_store_image(
-            tool_id, tool["name"], tool.get("brand"), tool.get("model")
-        )
+    if action == "url":
+        image_url = request.form.get("image_url", "").strip()
+        image_path = download_image(image_url, tool_id) if image_url else None
         if image_path:
             set_tool_image(tool_id, image_path)
-            flash("Plaatje gevonden en toegevoegd.", "success")
+            flash("Plaatje toegevoegd en op de server opgeslagen.", "success")
         else:
-            flash("Geen bruikbaar plaatje gevonden.", "warning")
+            flash(
+                "Deze afbeeldings-URL kon niet worden gedownload (jpg, png, "
+                "webp of gif, min. 200x200, max. 5 MB).",
+                "error",
+            )
     elif action == "upload":
         image_path = upload_image(request.files.get("image_file"), tool_id)
         if image_path:

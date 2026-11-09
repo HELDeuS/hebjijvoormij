@@ -23,10 +23,9 @@ gereedschap uitleensysteem
   achteraf aan te passen of te verwijderen via 'Aanpassen' en
   'Verwijderen' - alleen door de eigenaar of de beheerder. Verwijderen is geblokkeerd zolang het gereedschap is
   uitgeleend of aangevraagd.
-  Zijn merk en type bekend, dan wordt er automatisch een plaatje
-  opgezocht en op de gereedschapskaart getoond. Werkt het automatisch
-  zoeken niet, upload dan zelf een foto (jpg, png, webp of gif,
-  max. 5 MB).
+  Voeg een foto toe door er een te uploaden (jpg, png, webp of gif,
+  max. 5 MB) of een directe afbeeldings-URL te plakken; de app downloadt
+  en bewaart de afbeelding op de server.
 - **Combi-gereedschap** – koppel bijbehorend gereedschap aan elkaar
   (bv. speciale boren bij een boormachine); op de kaart terug te
   vinden onder "Goed te combineren met". Koppelen kan alleen met

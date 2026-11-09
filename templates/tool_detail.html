@@ -53,9 +53,10 @@
                 <input type="file" name="image_file" accept="image/*" required>
                 <button type="submit">Plaatje uploaden</button>
             </form>
-            <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline">
-                <input type="hidden" name="action" value="search">
-                <button type="submit">Plaatje zoeken</button>
+<form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline url-form">
+            <input type="hidden" name="action" value="url">
+            <input type="url" name="image_url" placeholder="of plak een afbeeldings-URL" required>
+            <button type="submit">Toevoegen</button>
             </form>
             {% if tool.image_path %}
             <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline">
