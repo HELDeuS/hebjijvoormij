@@ -1,3 +1,4 @@
+import io
 import os
 import re
 
@@ -16,7 +17,16 @@ HEADERS = {
 }
 
 
-def _search_duckduckgo(session, query):
+def _url_matches_tokens(url, tokens):
+    """True als de afbeeldings-URL merk of model bevat (relevante foto's
+    verwerken die meestal in de bestandsnaam)."""
+    if not tokens:
+        return True
+    path = url.lower().split("?")[0]
+    return any(token.lower() in path for token in tokens if token)
+
+
+def _search_duckduckgo(session, query, tokens=None):
     try:
         landing = session.post(
             "https://duckduckgo.com/", data={"q": query}, timeout=SEARCH_TIMEOUT
@@ -44,15 +54,19 @@ def _search_duckduckgo(session, query):
         results = response.json().get("results", [])
     except (requests.RequestException, ValueError):
         return None
+    fallback = None
     for result in results:
         url = result.get("image", "")
         width, height = result.get("width") or 0, result.get("height") or 0
         if url.startswith("http") and width >= 200 and height >= 200:
-            return url
-    return None
+            if _url_matches_tokens(url, tokens):
+                return url
+            if fallback is None:
+                fallback = url
+    return fallback
 
 
-def _search_bing(session, query):
+def _search_bing(session, query, tokens=None):
     try:
         response = session.get(
             "https://www.bing.com/images/search",
@@ -63,21 +77,27 @@ def _search_bing(session, query):
         return None
     urls = re.findall(r'murl&quot;:&quot;(.*?)&quot;', response.text)
     for url in urls:
-        if url.startswith("http") and any(
-            url.lower().split("?")[0].endswith(ext)
-            for ext in (".jpg", ".jpeg", ".png", ".webp")
+        if (
+            url.startswith("http")
+            and _url_matches_tokens(url, tokens)
+            and any(
+                url.lower().split("?")[0].endswith(ext)
+                for ext in (".jpg", ".jpeg", ".png", ".webp")
+            )
         ):
             return url
-    return urls[0] if urls else None
+    return None
 
 
-def search_image(query):
+def search_image(query, tokens=None):
     """Zoekt een afbeelding via DuckDuckGo Afbeeldingen en valt terug op
     Bing Afbeeldingen. Geeft de URL van de beste (voldoend grote)
     afbeelding terug, of None als er niets bruikbaars gevonden is."""
     session = requests.Session()
     session.headers.update(HEADERS)
-    return _search_duckduckgo(session, query) or _search_bing(session, query)
+    return _search_duckduckgo(session, query, tokens) or _search_bing(
+        session, query, tokens
+    )
 
 
 def download_image(image_url, tool_id):
@@ -99,6 +119,14 @@ def download_image(image_url, tool_id):
             return None
         data = response.content
         if not data or len(data) > MAX_IMAGE_BYTES:
+            return None
+        try:
+            from PIL import Image
+
+            with Image.open(io.BytesIO(data)) as img:
+                if img.width < 200 or img.height < 200:
+                    return None
+        except Exception:
             return None
         os.makedirs(IMAGES_DIR, exist_ok=True)
         filename = f"tool_{tool_id}{extensions[content_type]}"
@@ -145,12 +173,21 @@ def build_query(name, brand, model):
 
 
 def find_and_store_image(tool_id, name, brand, model):
-    """Zoekt en slaat een afbeelding op. Geeft het opgeslagen pad terug,
-    of None wanneer geen bruikbare afbeelding gevonden is."""
+    """Zoekt en slaat een afbeelding op. Probeert meerdere zoektermen en
+    accepteert alleen relevante resultaten. Geeft het opgeslagen pad
+    terug, of None wanneer geen bruikbare afbeelding gevonden is."""
+    tokens = [t for t in (brand, model) if t]
+    queries = []
+    if brand and model:
+        queries.append(f"{brand} {model} gereedschap")
+        queries.append(f"{brand} {model} {name} gereedschap")
     query = build_query(name, brand, model)
-    if not query:
-        return None
-    image_url = search_image(query)
-    if not image_url:
-        return None
-    return download_image(image_url, tool_id)
+    if query and query not in queries:
+        queries.append(query)
+    for query in queries:
+        image_url = search_image(query, tokens)
+        if image_url:
+            stored = download_image(image_url, tool_id)
+            if stored:
+                return stored
+    return None
