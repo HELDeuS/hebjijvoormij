@@ -4,6 +4,7 @@
 <section class="login-box">
     <h2>Gereedschap aanpassen</h2>
     <form method="post">
+        {% if friend and friend.is_admin %}
         <label>Eigenaar*
             <select name="owner_id" required>
                 {% for f in friends %}
@@ -11,6 +12,9 @@
                 {% endfor %}
             </select>
         </label>
+        {% else %}
+        <input type="hidden" name="owner_id" value="{{ tool.owner_id }}">
+        {% endif %}
         <label>Soort gereedschap* <input type="text" name="name" value="{{ tool.name }}" placeholder="bijv. accuboormachine" required></label>
         <label>Omschrijving <input type="text" name="description" value="{{ tool.description or '' }}"></label>
         <label>Categorie <input type="text" name="category" list="categories" value="{{ tool.category or '' }}" placeholder="bv. elektra, tuin, klussen"></label>

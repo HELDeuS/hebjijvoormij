@@ -4,6 +4,7 @@
 <section>
     <h2>Gereedschap registreren</h2>
     <form method="post">
+        {% if friend and friend.is_admin %}
         <label>Eigenaar*
             <select name="owner_id" required>
                 <option value="">— kies een vriend —</option>
@@ -12,6 +13,9 @@
                 {% endfor %}
             </select>
         </label>
+        {% else %}
+        <input type="hidden" name="owner_id" value="{{ friend.id }}">
+        {% endif %}
         <label>Soort gereedschap* <input type="text" name="name" placeholder="bijv. accuboormachine" required></label>
         <label>Omschrijving <input type="text" name="description"></label>
         <label>Categorie <input type="text" name="category" list="categories" placeholder="bv. elektra, tuin, klussen"></label>

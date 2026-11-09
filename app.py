@@ -537,6 +537,8 @@ def friend_edit(friend_id):
 def tools():
     if request.method == "POST":
         owner_id = request.form.get("owner_id", type=int)
+        if not g.friend["is_admin"]:
+            owner_id = g.friend["id"]
         name = request.form.get("name", "").strip()
         description = request.form.get("description", "").strip()
         category = request.form.get("category", "").strip()
@@ -670,6 +672,8 @@ def tool_edit(tool_id):
         return redirect(url_for("tools"))
     if request.method == "POST":
         owner_id = request.form.get("owner_id", type=int)
+        if not g.friend["is_admin"]:
+            owner_id = tool["owner_id"]
         name = request.form.get("name", "").strip()
         description = request.form.get("description", "").strip()
         category = request.form.get("category", "").strip()
