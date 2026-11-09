@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS friends (
     must_change_password TINYINT(1) NOT NULL DEFAULT 0,
     status ENUM('in_behandeling', 'actief', 'nonactief') NOT NULL DEFAULT 'actief',
     deactivation_reason TEXT,
+    date_format VARCHAR(10) NOT NULL DEFAULT 'dmy',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -94,4 +95,10 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sender_id) REFERENCES friends(id) ON DELETE CASCADE,
     FOREIGN KEY (recipient_id) REFERENCES friends(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    `key` VARCHAR(50) NOT NULL UNIQUE,
+    value VARCHAR(255) NOT NULL
 );

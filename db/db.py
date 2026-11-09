@@ -163,6 +163,9 @@ def ensure_schema():
                 "NOT NULL DEFAULT 'actief'"
             ),
             "deactivation_reason": "ALTER TABLE friends ADD COLUMN deactivation_reason TEXT",
+            "date_format": (
+                "ALTER TABLE friends ADD COLUMN date_format VARCHAR(10) NOT NULL DEFAULT 'dmy'"
+            ),
         }
         for column, statement in migrations.items():
             if column not in existing:
@@ -205,6 +208,27 @@ def get_friends():
         return db.get_friends()
 
 
+def get_setting(key, default=None):
+    with Database() as db:
+        rows = db._query(
+            "SELECT value FROM settings WHERE `key` = %s", (key,)
+        )
+        return rows[0]["value"] if rows else default
+
+
+def set_setting(key, value):
+    with Database() as db:
+        try:
+            db._execute(
+                "INSERT INTO settings (`key`, value) VALUES (%s, %s) "
+                "ON DUPLICATE KEY UPDATE value = %s",
+                (key, value, value),
+            )
+            return True
+        except mysql.connector.errors.Error:
+            return False
+
+
 def get_friend(friend_id):
     with Database() as db:
         rows = db._query("SELECT * FROM friends WHERE id = %s", (friend_id,))
@@ -214,12 +238,13 @@ def get_friend(friend_id):
 def add_friend(name, email, phone, password_hash=None, must_change_password=False):
     if not email or get_friend_by_email(email):
         return None
+    default_fmt = get_setting("default_date_format", "dmy")
     with Database() as db:
         try:
             db._execute(
-                "INSERT INTO friends (name, email, phone, password_hash, must_change_password) "
-                "VALUES (%s, %s, %s, %s, %s)",
-                (name, email, phone, password_hash, must_change_password),
+                "INSERT INTO friends (name, email, phone, password_hash, must_change_password, date_format) "
+                "VALUES (%s, %s, %s, %s, %s, %s)",
+                (name, email, phone, password_hash, must_change_password, default_fmt),
             )
             return db._query("SELECT LAST_INSERT_ID() AS id")[0]["id"]
         except mysql.connector.errors.IntegrityError:
@@ -274,15 +299,17 @@ def reset_friend_password(friend_id, password_hash):
 
 
 def register_friend(name, email, password_hash):
-    """Eigen registratie door een nieuwe gebruiker; wacht op goedkeuring."""
+    """Eigen registratie door een nieuwe gebruiker; wacht op goedkeuring.
+    De datumnotatie wordt de systeemstandaard."""
     if not email or get_friend_by_email(email):
         return None
+    default_fmt = get_setting("default_date_format", "dmy")
     with Database() as db:
         try:
             return db._execute(
-                "INSERT INTO friends (name, email, phone, password_hash, status) "
-                "VALUES (%s, %s, '', %s, 'in_behandeling')",
-                (name, email, password_hash),
+                "INSERT INTO friends (name, email, phone, password_hash, status, date_format) "
+                "VALUES (%s, %s, '', %s, 'in_behandeling', %s)",
+                (name, email, password_hash, default_fmt),
             )
         except mysql.connector.errors.IntegrityError:
             return None
@@ -309,6 +336,14 @@ def set_friend_status(friend_id, status, reason=None):
                 "WHERE id = %s",
                 (status, friend_id),
             )
+
+
+def set_friend_date_format(friend_id, date_format):
+    with Database() as db:
+        db._execute(
+            "UPDATE friends SET date_format = %s WHERE id = %s",
+            (date_format, friend_id),
+        )
 
 
 def set_friend_admin(friend_id, is_admin):
@@ -573,6 +608,21 @@ def mark_all_notifications_read(friend_id):
         )
 
 
+DATE_FORMATS = {
+    "dmy": "%d-%m-%Y",
+    "ymd": "%Y-%m-%d",
+    "mdy": "%m/%d/%Y",
+}
+
+
+def _format_date_for(value, db, friend_id):
+    rows = db._query(
+        "SELECT date_format FROM friends WHERE id = %s", (friend_id,)
+    )
+    fmt = DATE_FORMATS.get(rows[0]["date_format"]) if rows else None
+    return value.strftime(fmt or "%d-%m-%Y")
+
+
 def create_overdue_reminders():
     """Maakt een herinnering voor elke uitlening die over de afgesproken
     einddatum heen is; maximaal een herinnering per lening per dag."""
@@ -595,20 +645,22 @@ def create_overdue_reminders():
               )
             """
         )
+        created = []
         for loan in overdue:
+            date_str = _format_date_for(
+                loan["date_until"], db, loan["owner_id"]
+            )
+            message = (
+                f"'{loan['tool_name']}' is nog niet terug van "
+                f"{loan['borrower_name']} (afgesproken tot {date_str})."
+            )
             db._execute(
                 "INSERT INTO notifications (friend_id, type, message, link, ref_id) "
                 "VALUES (%s, 'herinnering', %s, %s, %s)",
-                (
-                    loan["owner_id"],
-                    f"'{loan['tool_name']}' is nog niet terug van "
-                    f"{loan['borrower_name']} (afgesproken tot "
-                    f"{loan['date_until'].strftime('%d-%m-%Y')}).",
-                    f"/tools/{loan['tool_id']}",
-                    loan["id"],
-                ),
+                (loan["owner_id"], message, f"/tools/{loan['tool_id']}", loan["id"]),
             )
-        return len(overdue)
+            created.append({"friend_id": loan["owner_id"], "message": message})
+        return created
 
 
 def send_message(sender_id, recipient_id, body):

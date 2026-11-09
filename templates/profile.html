@@ -40,8 +40,8 @@
                 <td>{{ loan.owner_name }}</td>
                 <td>{{ loan.borrower_name }}</td>
                 <td><span class="status {{ loan.status }}">{{ STATUS_LABELS[loan.status] }}</span></td>
-                <td>{{ loan.lent_at or "-" }}</td>
-                <td>{{ loan.returned_at or "-" }}</td>
+                <td>{{ loan.lent_at | fmt_date or "-" }}</td>
+                <td>{{ loan.returned_at | fmt_date or "-" }}</td>
             </tr>
             {% endfor %}
         </tbody>

@@ -46,6 +46,7 @@ from db.db import (
     get_friend_transactions,
     get_global_stats,
     get_inbox,
+    get_setting,
     get_linked_tools_map,
     get_loan,
     get_notifications,
@@ -70,6 +71,8 @@ from db.db import (
     return_loan,
     send_message,
     set_friend_admin,
+    set_friend_date_format,
+    set_setting,
     set_friend_password,
     set_friend_status,
     set_tool_image,
@@ -78,6 +81,7 @@ from db.db import (
     update_tool,
 )
 from images import download_image, upload_image
+from mail import send_email
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-key-verander-dit")
@@ -90,6 +94,64 @@ STATUS_LABELS = {
 }
 
 app.jinja_env.globals.update(STATUS_LABELS=STATUS_LABELS)
+
+DATE_FORMATS = {
+    "dmy": "%d-%m-%Y",
+    "ymd": "%Y-%m-%d",
+    "mdy": "%m/%d/%Y",
+}
+
+
+def _fmt_date(value):
+    """Formatteert een datum volgens de voorkeur van de ingelogde
+    gebruiker (of de systeemstandaard). Accepteert date, datetime en
+    ISO-string; onbekende invoer wordt ongewijzigd teruggegeven."""
+    from datetime import date as _date, datetime as _datetime
+
+    if value in (None, ""):
+        return value
+    if isinstance(value, str):
+        try:
+            value = _datetime.strptime(value[:10], "%Y-%m-%d").date()
+        except ValueError:
+            return value
+    if isinstance(value, _datetime):
+        value = value.date()
+    if not isinstance(value, _date):
+        return value
+    me = g.get("friend") if hasattr(g, "get") else None
+    fmt_key = (me or {}).get("date_format") if me else None
+    if not fmt_key:
+        try:
+            fmt_key = get_setting("default_date_format", "dmy")
+        except Exception:
+            fmt_key = "dmy"
+    fmt = DATE_FORMATS.get(fmt_key, "%d-%m-%Y")
+    return value.strftime(fmt)
+
+
+app.jinja_env.filters["fmt_date"] = _fmt_date
+
+NOTIFICATION_EMAIL_SUBJECTS = {
+    "leenverzoek": "Nieuw leenverzoek",
+    "goedgekeurd": "Leenverzoek goedgekeurd",
+    "geweigerd": "Leenverzoek geweigerd",
+    "teruggekeerd": "Gereedschap teruggekeerd",
+    "bericht": "Nieuw bericht",
+    "herinnering": "Herinnering: gereedschap nog niet terug",
+}
+
+
+def _notify(friend_id, type_, message, link=None, ref_id=None):
+    """Maakt een melding en verstuurt indien mogelijk een e-mail."""
+    create_notification(friend_id, type_, message, link, ref_id)
+    try:
+        recipient = get_friend(friend_id)
+        if recipient and recipient.get("email"):
+            subject = f"hebjijvoormij - {NOTIFICATION_EMAIL_SUBJECTS.get(type_, 'Melding')}"
+            send_email(recipient["email"], subject, message)
+    except Exception as exc:
+        app.logger.warning("E-mail bij melding faalde: %s", exc)
 
 
 @app.context_processor
@@ -136,7 +198,13 @@ def load_current_friend():
     if friend and time.time() - _last_reminder_check["ts"] > 3600:
         _last_reminder_check["ts"] = time.time()
         try:
-            create_overdue_reminders()
+            created = create_overdue_reminders()
+            for reminder in created or []:
+                _notify(
+                    reminder["friend_id"],
+                    "herinnering",
+                    reminder["message"],
+                )
         except Exception as exc:
             app.logger.warning("Herinneringscontrole mislukt: %s", exc)
 
@@ -293,6 +361,16 @@ def index():
 @app.route("/friends", methods=["GET", "POST"])
 @login_required
 def friends():
+    me = g.friend
+    if request.method == "POST" and "default_date_format" in request.form:
+        value = request.form.get("default_date_format", "").strip()
+        if me["is_admin"] and value in DATE_FORMATS:
+            set_setting("default_date_format", value)
+            flash(
+                "Standaard datumnotatie voor nieuwe gebruikers is aangepast.",
+                "success",
+            )
+        return redirect(url_for("friends"))
     if request.method == "POST":
         if not g.friend["is_admin"]:
             flash("Alleen de beheerder kan nieuwe vrienden toevoegen.", "error")
@@ -326,7 +404,11 @@ def friends():
         return redirect(url_for("friends"))
     pending = [f for f in get_friends() if f.get("status") == "in_behandeling"]
     return render_template(
-        "friends.html", friends_list=get_friends(), pending=pending
+        "friends.html",
+        friends_list=get_friends(),
+        pending=pending,
+        default_date_format=get_setting("default_date_format", "dmy"),
+        date_formats=DATE_FORMATS,
     )
 
 
@@ -476,7 +558,7 @@ def messages():
             )
         else:
             send_message(me["id"], recipient_id, body)
-            create_notification(
+            _notify(
                 recipient_id,
                 "bericht",
                 f"Je hebt een nieuw bericht van {me['name']}.",
@@ -663,9 +745,14 @@ def friend_edit(friend_id):
         email = request.form.get("email", "").strip()
         phone = request.form.get("phone", "").strip()
         new_password = request.form.get("new_password", "")
+        date_format = request.form.get("date_format", "").strip()
+        if date_format not in DATE_FORMATS:
+            date_format = None
         if not name or not email:
             flash("Naam en e-mail zijn verplicht.", "error")
         else:
+            if date_format:
+                set_friend_date_format(friend_id, date_format)
             error = update_friend(friend_id, name, email, phone)
             if error:
                 flash(error, "error")
@@ -699,7 +786,11 @@ def friend_edit(friend_id):
                         )
                 return redirect(url_for("profile" if friend_id == me["id"] else "friends"))
         friend.update(name=name or friend["name"], email=email or friend["email"], phone=phone)
-    return render_template("friend_edit.html", account=friend)
+    return render_template(
+        "friend_edit.html",
+        account=friend,
+        date_formats=DATE_FORMATS,
+    )
 
 
 @app.route("/tools", methods=["GET", "POST"])
@@ -1037,7 +1128,7 @@ def loans():
                 ):
                     flash("Leenverzoek aangemaakt.", "success")
                     owner = get_friend(tool["owner_id"])
-                    create_notification(
+                    _notify(
                         owner["id"],
                         "leenverzoek",
                         f"{friend['name']} wil '{tool['name']}' lenen van "
@@ -1078,7 +1169,7 @@ def loans():
                     borrower = get_friend(loan["borrower_id"])
                     tool = get_tool(loan["tool_id"])
                     if action == "approve":
-                        create_notification(
+                        _notify(
                             loan["borrower_id"],
                             "goedgekeurd",
                             f"Je leenverzoek voor '{tool['name']}' is "
@@ -1087,7 +1178,7 @@ def loans():
                             loan_id,
                         )
                     elif action == "reject":
-                        create_notification(
+                        _notify(
                             loan["borrower_id"],
                             "geweigerd",
                             f"Je leenverzoek voor '{tool['name']}' is geweigerd.",
@@ -1095,7 +1186,7 @@ def loans():
                             loan_id,
                         )
                     elif action == "return":
-                        create_notification(
+                        _notify(
                             loan["borrower_id"],
                             "teruggekeerd",
                             f"'{tool['name']}' is als teruggekeerd "

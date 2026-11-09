@@ -33,7 +33,7 @@
             <tr class="{{ 'notif-unread' if not m.is_read else 'notif-read' }}">
                 <td>{{ m.sender_name }}</td>
                 <td>{{ m.body }}</td>
-                <td>{{ m.created_at.strftime("%d-%m-%Y %H:%M") }}</td>
+                <td>{{ m.created_at | fmt_date }} {{ m.created_at.strftime("%H:%M") }}</td>
                 <td>
                     {% if not m.is_read %}
                     <form method="post" action="{{ url_for('message_read', message_id=m.id) }}" class="inline">
@@ -62,7 +62,7 @@
             <tr>
                 <td>{{ m.recipient_name }}</td>
                 <td>{{ m.body }}</td>
-                <td>{{ m.created_at.strftime("%d-%m-%Y %H:%M") }}</td>
+                <td>{{ m.created_at | fmt_date }} {{ m.created_at.strftime("%H:%M") }}</td>
             </tr>
             {% endfor %}
         </tbody>

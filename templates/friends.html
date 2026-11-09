@@ -1,6 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Vrienden - hebjijvoormij{% endblock %}
 {% block content %}
+{% if friend and friend.is_admin %}
+<section>
+    <h2>Standaard datumnotatie</h2>
+    <form method="post" class="inline">
+        <input type="hidden" name="default_date_format_form" value="1">
+        <label>Datumnotatie voor nieuwe gebruikers
+            <select name="default_date_format" onchange="this.form.submit()">
+                <option value="dmy" {% if default_date_format == 'dmy' %}selected{% endif %}>31-12-2026 (Nederlands)</option>
+                <option value="ymd" {% if default_date_format == 'ymd' %}selected{% endif %}>2026-12-31 (ISO)</option>
+                <option value="mdy" {% if default_date_format == 'mdy' %}selected{% endif %}>12/31/2026 (Amerikaans)</option>
+            </select>
+        </label>
+        <noscript><button type="submit">Opslaan</button></noscript>
+    </form>
+</section>
+{% endif %}
+
 {% if friend and friend.is_admin and pending %}
 <section>
     <h2>Accounts ter goedkeuring</h2>

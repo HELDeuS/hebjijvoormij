@@ -14,7 +14,7 @@
         <tbody>
             {% for n in notifications_list %}
             <tr class="{{ 'notif-unread' if not n.is_read else 'notif-read' }}">
-                <td>{{ n.created_at.strftime("%d-%m-%Y %H:%M") }}</td>
+                <td>{{ n.created_at | fmt_date }} {{ n.created_at.strftime("%H:%M") }}</td>
                 <td><span class="notif-type status {{ 'aangevraagd' if n.type in ('leenverzoek', 'herinnering') else ('uitgeleend' if n.type in ('goedgekeurd', 'bericht') else 'geweigerd') }}">{{ n.type }}</span></td>
                 <td>
                     {% if n.link %}<a href="{{ n.link }}">{{ n.message }}</a>

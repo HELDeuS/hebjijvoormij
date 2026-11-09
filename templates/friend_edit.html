@@ -8,6 +8,13 @@
         <label>E-mail* <input type="email" name="email" value="{{ account.email or '' }}" required></label>
         <label>Telefoon <input type="tel" name="phone" value="{{ account.phone or '' }}"></label>
         <label>Nieuw startwachtwoord <input type="password" name="new_password" minlength="6" placeholder="leeg laten = ongewijzigd"></label>
+        <label>Datumnotatie
+            <select name="date_format">
+                <option value="dmy" {% if account.date_format == 'dmy' or not account.date_format %}selected{% endif %}>31-12-2026 (Nederlands)</option>
+                <option value="ymd" {% if account.date_format == 'ymd' %}selected{% endif %}>2026-12-31 (ISO)</option>
+                <option value="mdy" {% if account.date_format == 'mdy' %}selected{% endif %}>12/31/2026 (Amerikaans)</option>
+            </select>
+        </label>
         <button type="submit">Opslaan</button>
         <a href="{{ url_for('friends') }}" class="hint">Annuleren</a>
     </form>

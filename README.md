@@ -39,7 +39,12 @@ gereedschap uitleensysteem
 - **Meldingen** – bel met teller in de balk: leenverzoeken,
   goedkeuringen, weigeringen, terugkeer, nieuwe berichten en dagelijkse
   herinneringen voor gereedschap dat over de afgesproken einddatum heen
-  is.
+  is. Bij elke melding wordt (indien SMTP geconfigureerd) ook een
+  e-mail gestuurd; mislukte verzending breekt de app nooit.
+- **Datumnotatie** – per gebruiker te kiezen (Nederlands 31-12-2026,
+  ISO 2026-12-31, Amerikaans 12/31/2026) via het accountformulier; de
+  beheerder stelt de standaard voor nieuwe gebruikers in op de
+  vriendenpagina.
 - **Berichten** – gebruikers sturen berichten naar kringgenoten (en de
   beheerder naar iedereen).
 - **Zoeken en filteren** – in de catalogus op naam, merk, type en
@@ -79,6 +84,12 @@ gereedschap uitleensysteem
 | `FLASK_HOST` | `127.0.0.1` | luisteradres van de app |
 | `FLASK_PORT` | `5000` | luisterpoort van de app |
 | `FLASK_DEBUG` | `0` | debug-mode; nooit aanzetten buiten localhost |
+| `SMTP_HOST` | – | SMTP-server voor e-mailnotificaties (leeg = geen e-mail) |
+| `SMTP_PORT` | `587` | SMTP-poort |
+| `SMTP_USER` | – | SMTP-gebruikersnaam |
+| `SMTP_PASSWORD` | – | SMTP-wachtwoord |
+| `SMTP_FROM` | – | afzender van de e-mails |
+| `SMTP_TLS` | `1` | STARTTLS gebruiken |
 
 Zie `.env.example` voor een compleet voorbeeldbestand.
 
