@@ -1,198 +1,127 @@
 # hebjijvoormij
 
-gereedschap uitleensysteem
+Gereedschap-uitleensysteem voor vriendenkringen: registreer je
+gereedschap, deel het met je kringgenoten en houd uitleningen bij met
+meldingen en berichten.
+
+> ## ⚠️ Disclaimer
+>
+> **Dit project is met behulp van AI ontwikkeld.** De code is **nog niet
+> door mensen gecontroleerd of gereviewed** en is **totaal niet voor
+> productiedoeleinden bedoeld**. Gebruik is volledig op eigen risico:
+> er zijn geen garanties voor juistheid, veiligheid of continuïteit.
+> Zet deze software niet in op systemen of netwerken waar
+> gevoelige gegevens of kritieke processen op staan.
 
 ## Functies
 
-- **Accounts** – iedereen kan zichzelf registreren; de beheerder keurt
-  het account goed. Gebruikers kunnen hun eigen account verwijderen en
-  de beheerder kan accounts op non-actief zetten met een reden (zichtbaar
-  bij het inloggen). De hoofdbeheerder kan extra beheerders aanwijzen
-  met dezelfde rechten, behalve het verwijderen van het
-  hoofdbeheer-account.
-- **Gereedschapscatalogus** – registreer gereedschap per eigenaar, met
-  omschrijving en categorie. De catalogus is te bekijken als kaarten
-  of als sorteerbare lijst (Soort, Categorie, Merk, Eigenaar, Status);
-  de voorkeur wordt per gebruiker onthouden. Bij Categorie en Merk
-  kun je vrij typen of eerder gebruikte waardes kiezen.
-  Klik op een kaart of naam voor een detailpagina met alle informatie
-  en een knop om direct een uitlening aan te vragen; de eigenaar en de
-  beheerder zien daar ook de beheerknoppen (aanpassen, verwijderen,
-  plaatje). De pagina **Mijn gereedschap** toont uitsluitend het eigen
-  gereedschap. Gereedschap is
-  achteraf aan te passen of te verwijderen via 'Aanpassen' en
-  'Verwijderen' - alleen door de eigenaar of de beheerder. Verwijderen is geblokkeerd zolang het gereedschap is
-  uitgeleend of aangevraagd.
-  Voeg een foto toe door er een te uploaden (jpg, png, webp of gif,
-  max. 5 MB) of een directe afbeeldings-URL te plakken; de app downloadt
-  en bewaart de afbeelding op de server.
-- **Combi-gereedschap** – koppel bijbehorend gereedschap aan elkaar
-  (bv. speciale boren bij een boormachine); op de kaart terug te
-  vinden onder "Goed te combineren met". Koppelen kan alleen met
-  gereedschap van dezelfde eigenaar, door de eigenaar of de
-  beheerder. Bij een leenverzoek
-  verschijnt er bovendien een tip en een paneel met combi-suggesties om
-  bijbehorend gereedschap direct mee te lenen.
-- **Uitleningen met status** – leenverzoeken met vanaf- en tot-datum en
-  optionele notitie doorlopen de statuscyclus `aangevraagd` →
+### Accounts en rollen
+- Zelfregistratie; de beheerder keurt nieuwe accounts goed of wijst ze af.
+- De beheerder kan accounts aanmaken, aanpassen, op non-actief zetten
+  (met reden, zichtbaar bij het inloggen), verwijderen en extra
+  beheerders aanwijzen.
+- Gebruikers beheren hun eigen account via het profiel: gegevens,
+  wachtwoord, account verwijderen.
+- Rate limiting op het inloggen: na 5 mislukte pogingen binnen
+  15 minuten is het account een kwartier geblokkeerd.
+- Datumnotatie per gebruiker te kiezen (Nederlands 31-12-2026,
+  ISO 2026-12-31, Amerikaans 12/31/2026); de beheerder stelt de
+  standaard voor nieuwe gebruikers in.
+
+### Gereedschapscatalogus
+- Registratie verplicht met soort, merk en type, plus optioneel
+  omschrijving en categorie (vrij te typen of kiezen uit eerder
+  gebruikte waardes).
+- **Kaart- en lijstweergave**, sorteerbaar (Soort, Merk, Categorie,
+  Eigenaar, Status), doorzoekbaar (naam, merk, type, omschrijving)
+  en filterbaar op categorie; de lijst toont thumbnails. De
+  voorkeur wordt per gebruiker onthouden.
+- Plaatjes: uploaden (jpg, png, webp of gif, max. 5 MB) of een
+  directe afbeeldings-URL; de app downloadt en bewaart de
+  afbeelding op de server (met validatie op type en afmetingen).
+- Beheerknoppen (aanpassen, verwijderen, plaatje) zijn alleen
+  zichtbaar voor de eigenaar en de beheerder; verwijderen is
+  geblokkeerd zolang gereedschap is uitgeleend of aangevraagd.
+- **Combi-gereedschap**: koppel bijbehorend gereedschap (bv. boren
+  bij een boormachine); bij een leenverzoek zijn combi-tools
+  direct aanvinkbaar en krijgen ze hetzelfde datumbereik en dezelfde
+  notitie.
+
+### Uitleningen
+- Leenverzoeken met **verplichte vanaf- en tot-datum** en een
+  optionele notitie; de statuscyclus is `aangevraagd` →
   `uitgeleend` → `teruggekeerd` (of `geweigerd`).
-- **Meldingen** – bel met teller in de balk: leenverzoeken,
-  goedkeuringen, weigeringen, terugkeer, nieuwe berichten en dagelijkse
-  herinneringen voor gereedschap dat over de afgesproken einddatum heen
-  is. Bij elke melding wordt (indien SMTP geconfigureerd) ook een
+- Aanvragen kan vanaf de gereedschapskaart (het gereedschap is dan
+  al ingevuld) of via het formulier op de uitleningenpagina.
+- De eigenaar keurt goed of weigert — vanaf de detailpagina of de
+  uitleningenpagina; terugkeer registreert hij met "Teruggekeerd".
+- Rolgebaseerd overzicht: iedereen ziet zijn eigen uitleningen, een
+  kringbeheerder ook die van zijn kringen, de beheerder alles — met
+  filters op status en kring en sorteerbare kolommen (periode en
+  notitie inbegrepen).
+
+### Meldingen en e-mail
+- Meldingenbel met ongelezen-teller: leenverzoeken, goedkeuringen,
+  weigeringen, terugkeer, nieuwe berichten en **dagelijkse
+  herinneringen** voor uitleningen die over de afgesproken
+  einddatum heen zijn.
+- Bij elke melding wordt (indien SMTP geconfigureerd) ook een
   e-mail gestuurd; mislukte verzending breekt de app nooit.
-- **Datumnotatie** – per gebruiker te kiezen (Nederlands 31-12-2026,
-  ISO 2026-12-31, Amerikaans 12/31/2026) via het accountformulier; de
-  beheerder stelt de standaard voor nieuwe gebruikers in op de
-  vriendenpagina.
-- **Berichten** – gebruikers sturen berichten naar kringgenoten (en de
-  beheerder naar iedereen).
-- **Zoeken en filteren** – in de catalogus op naam, merk, type en
-  omschrijving, plus een categoriefilter.
-- **Kring-gereedschap** – alle gereedschap van een kring in een
-  overzicht via de kringenpagina.
-- **Vriendenkringen** – iedereen kan een kring aanmaken en wordt dan
-  automatisch kringbeheerder; die kan leden toevoegen en verwijderen.
-  De beheerder kan bij het aanmaken een andere kringbeheerder kiezen
-  (bv. zichzelf). Je ziet alleen gereedschap van vrienden met wie je
-  een kring deelt. De beheerder kan kringen hernoemen en verwijderen.
-- **Statistieken** – algemene totalen (gereedschap, gebruikers,
-  uitleningen) voor iedereen, cijfers per eigen kring, en voor de
-  beheerder de totalen van alle kringen.
-- **Overzichten** – openstaande uitleningen en verzoeken, per-vriend statistieken,
-  en een persoonlijk transactieoverzicht.
+
+### Berichten
+- Gebruikers sturen berichten naar kringgenoten (de beheerder naar
+  iedereen), met inbox, verzonden items en gelezen-markeren.
+
+### Vriendenkringen
+- Iedereen kan een kring aanmaken en wordt automatisch
+  kringbeheerder; die beheert de leden. De beheerder kan kringen
+  hernoemen, verwijderen en bij aanmaak een andere kringbeheerder
+  kiezen.
+- Gereedschap is alleen zichtbaar en leenbaar binnen gedeelde
+  kringen.
+- **Kring-gereedschap**: alle gereedschap van een kring in één
+  overzicht, met dezelfde kaart-/lijstweergave, sortering, zoek- en
+  filteropties als de catalogus.
+
+### Overzichten en statistieken
+- Openstaande uitleningen en verzoeken op de hoofdpagina, met
+  klikbare gereedschapsnamen.
+- Statistieken: algemene totalen, cijfers per kring en voor de
+  beheerder de totalen van alle kringen; per-vriend statistieken en
+  een persoonlijk transactieoverzicht op het profiel.
 
 ## Technologie
 
-- Python 3.12, Flask
-- MySQL / MariaDB (mysql-connector-python, connection pooling)
-- Server-side templates (Jinja2) en één CSS-bestand
+- Python 3.10+ / Flask, server-side templates (Jinja2), één CSS-bestand
+- MySQL / MariaDB (mysql-connector-python, connection pooling,
+  self-healing migraties)
+- gunicorn als productie-webserver; Pillow voor afbeeldingsvalidatie
+- Sessies met ondertekende cookies (SECRET_KEY)
 
-## Omgevingsvariabelen
+## Snelle start (ontwikkeling)
 
-| Variabele | Standaard | Betekenis |
-|---|---|---|
-| `DB_HOST` | `127.0.0.1` | MariaDB-host |
-| `DB_PORT` | `3306` | MariaDB-poort |
-| `DB_USER` | `gereedschap` | databasegebruiker van de app |
-| `DB_PASSWORD` | `gereedschap` | wachtwoord van de databasegebruiker |
-| `DB_NAME` | `gereedschap_leensysteem` | databasenaam |
-| `SECRET_KEY` | – | ondertekening van sessies (vereist, geheim houden) |
-| `ADMIN_NAME` | `admin` | naam van de beheerder bij eerste aanmaak |
-| `ADMIN_EMAIL` | `admin@localhost` | e-mailadres (inlognaam) van de beheerder |
-| `ADMIN_PASSWORD` | `beheer123` | startwachtwoord van de beheerder |
-| `FLASK_HOST` | `127.0.0.1` | luisteradres van de app |
-| `FLASK_PORT` | `5000` | luisterpoort van de app |
-| `FLASK_DEBUG` | `0` | debug-mode; nooit aanzetten buiten localhost |
-| `SMTP_HOST` | – | SMTP-server voor e-mailnotificaties (leeg = geen e-mail) |
-| `SMTP_PORT` | `587` | SMTP-poort |
-| `SMTP_USER` | – | SMTP-gebruikersnaam |
-| `SMTP_PASSWORD` | – | SMTP-wachtwoord |
-| `SMTP_FROM` | – | afzender van de e-mails |
-| `SMTP_TLS` | `1` | STARTTLS gebruiken |
+Vereisten: Python 3.10+ en een draaiende MySQL- of MariaDB-server.
 
-Zie `.env.example` voor een compleet voorbeeldbestand.
+```bash
+pip install -r requirements.txt
+export DB_HOST=127.0.0.1 DB_PORT=3306 DB_USER=gereedschap \
+       DB_PASSWORD=gereedschap DB_NAME=gereedschap_leensysteem \
+       SECRET_KEY=ontwikkelsleutel ADMIN_EMAIL=admin@localhost \
+       ADMIN_PASSWORD=beheer123
+python app.py
+```
 
-## Installatie
+De app maakt de database, tabellen en het beheerdersaccount
+automatisch aan (root-toegang via `DB_USER_ROOT`/`DB_PASSWORD_ROOT`,
+of maak de database vooraf handmatig aan — zie stap 3 en 5 hieronder).
+Bereikbaar op <http://127.0.0.1:5000>. Log in als beheerder
+(`admin@localhost` / `beheer123`) en kies direct een nieuw wachtwoord.
 
-1. **Vereisten**: Python 3.10+ en een draaiende MySQL- of MariaDB-server.
+## Installatie op Ubuntu Server (volledige handleiding)
 
-2. **Databasegebruiker** (eenmalig, als root):
-
-   ```sql
-   CREATE USER 'gereedschap'@'localhost' IDENTIFIED BY 'gereedschap';
-   GRANT ALL PRIVILEGES ON gereedschap_leensysteem.* TO 'gereedschap'@'localhost';
-   ```
-
-3. **Omgevingsvariabelen** (zie `.env.example`):
-
-   ```bash
-   export DB_HOST=127.0.0.1
-   export DB_PORT=3306
-   export DB_USER=gereedschap
-   export DB_PASSWORD=gereedschap
-   export DB_NAME=gereedschap_leensysteem
-   export DB_USER_ROOT=root
-   export DB_PASSWORD_ROOT=<jouw root-wachtwoord>
-   export SECRET_KEY=<iets-geheims>
-   export FLASK_HOST=127.0.0.1
-   export FLASK_PORT=5000
-   export FLASK_DEBUG=0
-   export ADMIN_NAME=admin
-   export ADMIN_EMAIL=admin@localhost
-   export ADMIN_PASSWORD=beheer123
-   ```
-
-4. **Installeren en starten**:
-
-   ```bash
-   pip install -r requirements.txt
-   python app.py
-   ```
-
-   Voor productie draait de app onder gunicorn (zie de Ubuntu-handleiding);
-   `python app.py` is de ontwikkelmodus.
-
-   Werkt je MariaDB-root met wachtwoord-login (bv. lokaal op een
-   ontwikkelmachine), dan maakt de app de database en tabellen automatisch
-   aan. Gebruikt je root unix-socket-authenticatie (standaard op Ubuntu),
-   maak de database en tabellen dan handmatig vooraf:
-
-   ```bash
-   sudo mariadb -e "CREATE DATABASE IF NOT EXISTS gereedschap_leensysteem CHARACTER SET utf8mb4"
-   sudo mariadb gereedschap_leensysteem < db/schema.sql
-   ```
-
-   Daarna start de app op <http://127.0.0.1:5000>.
-
-## Gebruik
-
-1. De app maakt automatisch een **beheerder** aan met vooraf bekende
-   inloggegevens: e-mail `admin@localhost`, wachtwoord `beheer123`
-   (aanpasbaar via `ADMIN_EMAIL` en `ADMIN_PASSWORD` in de omgeving).
-   Bij de eerste login is de beheerder verplicht een nieuw wachtwoord
-   te kiezen.
-2. Nieuwe gebruikers kunnen zichzelf registreren via de link op de
-   loginpagina; de beheerder keurt het account goed (of wijst het af)
-   onder **Vrienden**. De beheerder kan ook zelf accounts aanmaken,
-   aanpassen, op non-actief zetten (met reden) en verwijderen.
-3. De beheerder kan bestaande accounts aanpassen (naam, e-mail,
-   telefoon) en een nieuw startwachtwoord instellen via **Aanpassen**
-   in de vriendenlijst - ook het eigen account van de beheerder,
-   inclusief het eigen e-mailadres (de inlognaam).
-4. Log in met je e-mailadres en wachtwoord. Klik rechtsboven op je
-   naam voor je **profiel**: daar beheer je je eigen account (gegevens
-   en wachtwoord wijzigen, account verwijderen), zie je je eigen
-   gereedschap en je eigen uitleningen. Gewone gebruikers hebben geen
-   aparte navigatie-items meer voor uitleningen en eigen gereedschap;
-   de beheerder houdt de uitleningen-pagina voor algemeen beheer.
-5. Registreer gereedschap onder **Gereedschap** (kies de eigenaar).
-6. Onder **Uitleningen** maak je een leenverzoek aan; de eigenaar keurt het
-   goed of wijst het af, en het gereedschap wordt teruggegeven via
-   "Terugontvangen". Het uitleningenoverzicht is rolgebaseerd: een
-   gebruiker ziet zijn eigen uitleningen, een kringbeheerder die van
-   zijn kringen en de beheerder die van iedereen - met filters op
-   status en kring en sorteerbare kolommen.
-7. Maak onder **Kringen** een vriendenkring aan (je wordt automatisch
-   kringbeheerder) en voeg je vrienden toe; alleen kringgenoten zien
-   elkaars gereedschap en kunnen van elkaar lenen.
-8. Het **Overzicht** toont alle openstaande leningen en statistieken,
-   beperkt tot jouw kringen.
-
-### Inloggen en beveiliging
-
-- Elke vriend logt in met e-mailadres en wachtwoord (e-mailadressen zijn
-  uniek); wachtwoorden worden gehasht opgeslagen (werkzeug/scrypt) en
-  nooit in platte tekst.
-- Alle pagina's zijn alleen bereikbaar na inloggen.
-- Zet een sterk `SECRET_KEY`-geheim in de omgevingsvariabelen, want daarmee
-  worden de sessies ondertekend.
-
-## Installatie op Ubuntu Server
-
-Deze handleiding gaat uit van Ubuntu Server 22.04 of 24.04 en doorloopt de
-stappen in deze volgorde: pakketten → app-code → database → configuratie →
-tabellen en test → service → bereikbaarheid.
+Deze handleiding gaat uit van Ubuntu Server 22.04 of 24.04 en doorloopt
+de stappen in deze volgorde: pakketten → app-code → database →
+configuratie → tabellen en test → service → bereikbaarheid.
 
 ### 1. Systeempakketten
 
@@ -248,9 +177,9 @@ EXIT;
 
 ### 4. Configuratie
 
-Maak een omgevingsbestand `/opt/hebjijvoormij/app/.env` (niet in git); zie
-`.env.example` voor alle variabelen. Genereer een veilige `SECRET_KEY` met
-`openssl rand -hex 32`.
+Maak een omgevingsbestand `/opt/hebjijvoormij/app/.env` (niet in git);
+zie `.env.example` voor alle variabelen. Genereer een veilige
+`SECRET_KEY` met `openssl rand -hex 32`.
 
 ```bash
 cat > /opt/hebjijvoormij/app/.env <<'ENV'
@@ -266,16 +195,21 @@ ADMIN_PASSWORD=kies-eigen-startwachtwoord
 FLASK_HOST=127.0.0.1
 FLASK_PORT=5000
 FLASK_DEBUG=0
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=
+SMTP_TLS=1
 ENV
 ```
 
-**Belangrijk bij de beheerder**: `ADMIN_EMAIL` en `ADMIN_PASSWORD` zijn de
-startgegevens waarmee de beheerder wordt aangemaakt (het e-mailadres is
-de inlognaam). Kies een eigen
-startwachtwoord (niet de standaard `beheer123`) — de app maakt de
-beheerder bij de eerste start aan met deze gegevens en dwingt bij de
-eerste login tot het kiezen van een eigen nieuw wachtwoord. Bestaande
-beheerders worden bij latere starts nooit gewijzigd.
+**Belangrijk bij de beheerder**: `ADMIN_EMAIL` en `ADMIN_PASSWORD` zijn
+de startgegevens waarmee de beheerder wordt aangemaakt (het e-mailadres
+is de inlognaam). Kies een eigen startwachtwoord (niet de standaard
+`beheer123`) — de app maakt de beheerder bij de eerste start aan en
+dwingt bij de eerste login tot het kiezen van een nieuw wachtwoord.
+Bestaande beheerders worden bij latere starts nooit gewijzigd.
 
 Zet de juiste rechten:
 
@@ -286,8 +220,9 @@ sudo chmod 600 /opt/hebjijvoormij/app/.env
 
 ### 5. Tabellen aanmaken en app testen
 
-De tabellen worden als éénmalige actie aangemaakt met het schema uit de repo
-(MariaDB-root werkt op Ubuntu via `sudo`, dus dit hoeft niet via de app):
+De tabellen worden als eenmalige actie aangemaakt met het schema uit de
+repo (MariaDB-root werkt op Ubuntu via `sudo`, dus dit hoeft niet via
+de app):
 
 ```bash
 sudo mariadb gereedschap_leensysteem < /opt/hebjijvoormij/app/db/schema.sql
@@ -301,11 +236,10 @@ sudo -u hebjijvoormij bash -c 'set -a; source .env; set +a; venv/bin/python app.
 ```
 
 De app is nu bereikbaar op `http://127.0.0.1:5000`. Log in met de
-beheerdersgegevens (standaard `admin@localhost` / `beheer123`,
-instelbaar via `ADMIN_EMAIL` en `ADMIN_PASSWORD` in de `.env`) en kies
-direct een nieuw wachtwoord. Stop daarna met Ctrl-C en ga verder met de service-installatie.
+beheerdersgegevens en kies direct een nieuw wachtwoord. Stop daarna met
+Ctrl-C en ga verder met de service-installatie.
 
-### 6. Systemd-service
+### 6. Systemd-service (gunicorn)
 
 Maak `/etc/systemd/system/hebjijvoormij.service`:
 
@@ -329,17 +263,15 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-De app luistert standaard alleen op `127.0.0.1`; de systemd-service draait
-de app dus uitsluitend lokaal. Wil je de app rechtstreeks op het netwerk
-bereikbaar maken (zonder nginx), zet dan in de `.env`:
+De app luistert standaard alleen op `127.0.0.1`. Wil je de app
+rechtstreeks op het netwerk bereikbaar maken (zonder nginx), zet dan
+`FLASK_HOST=0.0.0.0` in de `.env` en open poort 5000 in de firewall
+(bij voorkeur alleen voor vertrouwde netwerken):
 
-```
-FLASK_HOST=0.0.0.0
-FLASK_DEBUG=0
+```bash
+sudo ufw allow from 192.168.1.0/24 to any port 5000 tcp
 ```
 
-en open poort 5000 in de firewall (bij voorkeur alleen voor vertrouwde
-netwerken): `sudo ufw allow from 192.168.1.0/24 to any port 5000 tcp`.
 Zet `FLASK_DEBUG` nooit op 1 als de app buiten localhost bereikbaar is.
 
 Activeer en start de service:
@@ -358,8 +290,8 @@ journalctl -u hebjijvoormij -f
 
 ### 7. Bereikbaar maken via nginx met HTTPS
 
-Maak de site-configuratie `/etc/nginx/sites-available/hebjijvoormij` (pas
-`gereedschap.voorbeeld.nl` aan naar je eigen domein):
+Maak de site-configuratie (pas `gereedschap.voorbeeld.nl` aan naar je
+eigen domein):
 
 ```bash
 sudo tee /etc/nginx/sites-available/hebjijvoormij > /dev/null <<'NGINX'
@@ -406,50 +338,35 @@ De app is nu bereikbaar via `https://gereedschap.voorbeeld.nl`.
 sudo systemctl stop hebjijvoormij
 sudo -u hebjijvoormij git -C /opt/hebjijvoormij/app pull
 sudo -u hebjijvoormij /opt/hebjijvoormij/app/venv/bin/pip install -r /opt/hebjijvoormij/app/requirements.txt
-```
-
-Nieuwe kolommen en tabellen worden door de app bij het opstarten
-automatisch toegevoegd aan de database (migraties).
-
-```bash
 sudo systemctl start hebjijvoormij
 ```
+
+Nieuwe kolommen en tabellen voegt de app bij de eerste request na de
+update automatisch toe (self-healing migratie).
 
 ### 9. Problemen met de beheerder
 
 Wordt de beheerder niet herkend, controleer dan in deze volgorde:
 
-1. **Service herstarten** — systemd leest de `.env` alleen bij het starten:
-   `sudo systemctl restart hebjijvoormij`.
+1. **Service herstarten** — systemd leest de `.env` alleen bij het
+   starten: `sudo systemctl restart hebjijvoormij`.
 2. **Diagnose draaien**:
    ```bash
    cd /opt/hebjijvoormij/app
    sudo -u hebjijvoormij bash -c 'set -a; source .env; set +a; venv/bin/flask --app app ensure-admin'
    ```
-   Het commando meldt of de beheerder bestaat, of het wachtwoord al is
-   ingesteld, en wat er mis is met de database.
-3. **Bestaande beheerder wordt niet gewijzigd** — heeft de app ooit eerder
-   gedraaid, dan bestaat de beheerder al met de toen geldige gegevens;
-   een latere wijziging van `ADMIN_EMAIL`/`ADMIN_PASSWORD` in de `.env`
-   heeft dan geen effect. Zet het wachtwoord opnieuw via de app, of
-   verwijder de beheerder en draai `ensure-admin` opnieuw:
+3. **Bestaande beheerder wordt niet gewijzigd** — heeft de app ooit
+   eerder gedraaid, dan bestaat de beheerder al; een latere wijziging
+   van `ADMIN_EMAIL`/`ADMIN_PASSWORD` in de `.env` heeft dan geen
+   effect. Zet het wachtwoord opnieuw via de app, of verwijder de
+   beheerder en draai `ensure-admin` opnieuw:
    ```sql
    DELETE FROM friends WHERE is_admin = 1;
    ```
-4. **Kolommen of het admin-account ontbreken** — de app herstelt dit
-   tegenwoordig zelf: bij elke start (en bij een bezoek aan de
-   loginpagina) voert ze het schema uit met de gewone databasegebruiker,
-   voegt ze ontbrekende kolommen toe aan bestaande tabellen en zet ze
-   het standaard admin-account in de database (`INSERT IGNORE`, dus
-   nooit duplicaten). Handmatig kan dit ook:
-   ```bash
-   sudo mariadb gereedschap_leensysteem < /opt/hebjijvoormij/app/db/schema.sql
-   ```
-   Het admin-account wordt niet door het schema aangemaakt maar door de
-   app zelf bij het opstarten (standaard `admin@localhost` / `beheer123`,
-   met verplichte wachtwoordwijziging bij de eerste login).
-5. **Logs bekijken**: `journalctl -u hebjijvoormij -f` — fouten bij het
-   aanmaken van de beheerder worden hier gelogd.
+4. **Kolommen of tabellen ontbreken** — de app herstelt dit zelf bij
+   de eerste request (schema + ontbrekende kolommen); handmatig kan
+   ook: `sudo mariadb gereedschap_leensysteem < /opt/hebjijvoormij/app/db/schema.sql`.
+5. **Logs bekijken**: `journalctl -u hebjijvoormij -f`.
 
 ### 10. Back-up
 
@@ -460,20 +377,66 @@ sudo tar czf tool-images-$(date +%F).tar.gz /opt/hebjijvoormij/app/static/tool_i
 
 Plan dit bv. dagelijks via een cron-job.
 
+## Omgevingsvariabelen
+
+| Variabele | Standaard | Betekenis |
+|---|---|---|
+| `DB_HOST` | `127.0.0.1` | MariaDB-host |
+| `DB_PORT` | `3306` | MariaDB-poort |
+| `DB_USER` | `gereedschap` | databasegebruiker van de app |
+| `DB_PASSWORD` | `gereedschap` | wachtwoord van de databasegebruiker |
+| `DB_NAME` | `gereedschap_leensysteem` | databasenaam |
+| `DB_USER_ROOT` | `root` | root-gebruiker voor automatische aanmaak (optioneel) |
+| `DB_PASSWORD_ROOT` | – | root-wachtwoord voor automatische aanmaak (optioneel) |
+| `SECRET_KEY` | – | ondertekening van sessies (vereist, geheim houden) |
+| `ADMIN_NAME` | `admin` | naam van de beheerder bij eerste aanmaak |
+| `ADMIN_EMAIL` | `admin@localhost` | e-mailadres (inlognaam) van de beheerder |
+| `ADMIN_PASSWORD` | `beheer123` | startwachtwoord van de beheerder |
+| `FLASK_HOST` | `127.0.0.1` | luisteradres van de app |
+| `FLASK_PORT` | `5000` | luisterpoort van de app |
+| `FLASK_DEBUG` | `0` | debug-mode; nooit aanzetten buiten localhost |
+| `SMTP_HOST` | – | SMTP-server voor e-mailnotificaties (leeg = geen e-mail) |
+| `SMTP_PORT` | `587` | SMTP-poort |
+| `SMTP_USER` | – | SMTP-gebruikersnaam |
+| `SMTP_PASSWORD` | – | SMTP-wachtwoord |
+| `SMTP_FROM` | – | afzender van de e-mails |
+| `SMTP_TLS` | `1` | STARTTLS gebruiken |
+
+Zie `.env.example` voor een compleet voorbeeldbestand.
+
+## Gebruik
+
+1. **Eerste keer**: log in als beheerder (`ADMIN_EMAIL` /
+   `ADMIN_PASSWORD`) en kies direct een nieuw wachtwoord.
+2. **Gebruikers**: nieuwe gebruikers registreren zichzelf via de
+   loginpagina; de beheerder keurt ze goed onder **Vrienden**.
+3. **Kringen**: maak onder **Kringen** een vriendenkring aan (je wordt
+   automatisch kringbeheerder) en voeg je vrienden toe; alleen
+   kringgenoten zien elkaars gereedschap en kunnen van elkaar lenen.
+4. **Gereedschap**: registreer gereedschap onder **Gereedschap** met
+   soort, merk en type; voeg een plaatje toe via upload of URL.
+5. **Lenen**: vraag een uitlening aan vanaf de gereedschapskaart of de
+   uitleningenpagina (vanaf- en tot-datum verplicht, notitie
+   optioneel, combi-gereedschap direct aanvinkbaar). De eigenaar
+   keurt goed of wijst af; daarna registreert hij de terugkeer.
+6. **Meldingen en berichten**: de bel rechtsboven toont meldingen
+   (met e-mail indien SMTP is ingesteld); onder **Berichten** stuur
+   je kringgenoten een bericht.
+7. **Profiel**: klik rechtsboven op je naam voor je eigen gegevens,
+   gereedschap, uitleningen en je datumnotatie.
+
 ## Database-schema
 
 Zie `db/schema.sql`. Belangrijk:
 
 - de tabel `loans` heeft een unieke sleutel op `(tool_id, active_flag)`
   via een virtuele kolom, zodat gereedschap nooit tegelijk aan twee
-  mensen uitgeleerd kan zijn;
-- `tool_links` bevat de symmetrische koppelingen tussen gereedschappen
-  ("goed te combineren met");
-- `circles` en `circle_members` vormen de vriendenkringen; de maker van
-  een kring is kringbeheerder en het gereedschap is alleen zichtbaar
-  en leenbaar binnen gedeelde kringen;
-- het schema zet direct het standaard beheerdersaccount neer
-  (`admin`, met verplichte wachtwoordwijziging bij de eerste login);
-- de app voert het schema bij elke start uit met de gewone
+  mensen uitgeleend kan zijn, en bevat de leenperiode
+  (`date_from`, `date_until`) en notitie;
+- `tool_links` bevat de symmetrische combi-koppelingen;
+- `circles` en `circle_members` vormen de vriendenkringen;
+- `notifications` en `messages` bevatten de meldingen en berichten;
+- `settings` bevat systeeminstellingen (bv. de standaard-datumnotatie);
+- de app voert het schema bij de eerste request uit met de gewone
   databasegebruiker en voegt ontbrekende kolommen automatisch toe
   (self-healing migratie).
