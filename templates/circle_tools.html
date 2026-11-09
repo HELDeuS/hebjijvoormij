@@ -3,10 +3,32 @@
 {% block content %}
 <section>
     <h2>Gereedschap van kring "{{ circle.name }}"</h2>
+    <form method="get" action="{{ list_action }}" class="filter-form">
+        <input type="hidden" name="view" value="{{ view }}">
+        <label>Zoeken <input type="search" name="q" value="{{ search or '' }}" placeholder="naam, merk, type of omschrijving"></label>
+        <label>Categorie
+            <select name="category" onchange="this.form.submit()">
+                <option value="">Alle</option>
+                {% for c in categories %}
+                <option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit">Zoeken</button>
+        <a href="{{ list_action }}?view={{ view }}" class="hint">Wissen</a>
+    </form>
+    <div class="view-toggle">
+        <a href="{{ url_for('circle_tools', circle_id=circle.id, view='cards') }}" class="toggle {{ 'active' if view == 'cards' else '' }}">Kaarten</a>
+        <a href="{{ url_for('circle_tools', circle_id=circle.id, view='list') }}" class="toggle {{ 'active' if view == 'list' else '' }}">Lijst</a>
+    </div>
     {% if tools_list %}
-    {% include "_tool_grid.html" %}
+    {% if view == 'list' %}
+    {% include "_tool_list.html" %}
     {% else %}
-    <p>De leden van deze kring hebben nog geen gereedschap geregistreerd.</p>
+    {% include "_tool_grid.html" %}
+    {% endif %}
+    {% else %}
+    <p>Geen gereedschap gevonden{% if search or category_filter %} voor deze zoekopdracht{% endif %}.</p>
     {% endif %}
     <p><a href="{{ url_for('circles') }}" class="hint">← Terug naar kringen</a></p>
 </section>

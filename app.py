@@ -604,11 +604,55 @@ def circle_tools(circle_id):
         flash("Je bent geen lid van deze kring.", "error")
         return redirect(url_for("circles"))
     tools_list = [t for t in get_tools() if t["owner_id"] in member_ids]
+    search = request.args.get("q", "").strip().lower()
+    category_filter = request.args.get("category", "").strip()
+    if search:
+        tools_list = [
+            t
+            for t in tools_list
+            if search in (t["name"] or "").lower()
+            or search in (t["brand"] or "").lower()
+            or search in (t["model"] or "").lower()
+            or search in (t["description"] or "").lower()
+        ]
+    if category_filter:
+        tools_list = [t for t in tools_list if t["category"] == category_filter]
+    view = request.args.get("view") or session.get("circle_tools_view", "cards")
+    if view not in ("cards", "list"):
+        view = "cards"
+    session["circle_tools_view"] = view
+    sort = request.args.get("sort", "name")
+    direction = request.args.get("dir", "asc")
+    if direction not in ("asc", "desc"):
+        direction = "asc"
+    sort_keys = {
+        "name": lambda t: (t["name"] or "").lower(),
+        "category": lambda t: (t["category"] or "").lower(),
+        "brand": lambda t: (t["brand"] or "").lower(),
+        "owner": lambda t: (t["owner_name"] or "").lower(),
+        "status": lambda t: t["loan_status"] or "beschikbaar",
+    }
+    if sort in sort_keys:
+        tools_list = sorted(tools_list, key=sort_keys[sort], reverse=direction == "desc")
     return render_template(
         "circle_tools.html",
         circle=circle,
         tools_list=tools_list,
         links=get_linked_tools_map([t["id"] for t in tools_list]),
+        view=view,
+        sort=sort,
+        direction=direction,
+        search=search,
+        category_filter=category_filter,
+        categories=sorted({t["category"] for t in get_tools() if t["category"]}),
+        list_base=url_for(
+            "circle_tools",
+            circle_id=circle_id,
+            view="list",
+            q=search,
+            category=category_filter,
+        ),
+        list_action=url_for("circle_tools", circle_id=circle_id),
     )
 
 
@@ -861,6 +905,8 @@ def tools():
         brands=get_distinct_values("brand"),
         search=search,
         category_filter=category_filter,
+        list_base=url_for("tools", view="list", q=search, category=category_filter),
+        list_action=url_for("tools"),
     )
 
 
