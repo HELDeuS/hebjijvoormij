@@ -9,6 +9,12 @@ MAX_IMAGE_BYTES = 5 * 1024 * 1024
 SEARCH_TIMEOUT = 10
 DOWNLOAD_TIMEOUT = 15
 
+def _log(message):
+    """Logt direct naar stdout met flush, zodat regels meteen in
+    journalctl verschijnen (stdout is onder systemd gebufferd)."""
+    print(message, flush=True)
+
+
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -54,16 +60,33 @@ def _search_duckduckgo(session, query, tokens=None):
         results = response.json().get("results", [])
     except (requests.RequestException, ValueError):
         return None
-    fallback = None
+    best_url, best_score = None, -1
+    fallback_url = None
     for result in results:
         url = result.get("image", "")
+        title = (result.get("title") or "").lower()
         width, height = result.get("width") or 0, result.get("height") or 0
-        if url.startswith("http") and width >= 200 and height >= 200:
-            if _url_matches_tokens(url, tokens):
-                return url
-            if fallback is None:
-                fallback = url
-    return fallback
+        if not url.startswith("http"):
+            continue
+        score = 0
+        if _url_matches_tokens(url, tokens):
+            score += 2
+        if tokens and any(token.lower() in title for token in tokens if token):
+            score += 2
+        if width >= 200 and height >= 200:
+            score += 1
+            if fallback_url is None:
+                fallback_url = url
+        if score > best_score:
+            best_url, best_score = url, score
+    if best_score >= 3:
+        _log(f"plaatjes: duckduckgo relevante treffer: {best_url}")
+        return best_url
+    _log(
+        f"plaatjes: duckduckgo: geen relevante resultaten "
+        f"(beste score {best_score} op {len(results)} resultaten)"
+    )
+    return fallback_url
 
 
 def _search_bing(session, query, tokens=None):
@@ -86,7 +109,7 @@ def _search_bing(session, query, tokens=None):
         if murl and murl.group(1).startswith("http"):
             results.append((murl.group(1), (title.group(1) if title else "").lower()))
     if not results:
-        print(f"plaatjes: bing gaf geen resultaten voor '{query}'")
+        _log(f"plaatjes: bing gaf geen resultaten voor '{query}'")
         return None
     best_url, best_score = None, -1
     fallback_url = None
@@ -102,17 +125,16 @@ def _search_bing(session, query, tokens=None):
             score += 2
         if ext_ok:
             score += 1
-        if ext_ok and fallback_url is None:
-            fallback_url = url
         if score > best_score:
             best_url, best_score = url, score
     if best_score >= 3:
         return best_url
-    print(
+    _log(
         f"plaatjes: bing: geen relevante resultaten voor '{query}' "
-        f"(beste score {best_score} op {len(results)} resultaten)"
+        f"(beste score {best_score} op {len(results)} resultaten); "
+        f"geen terugval op irrelevante afbeeldingen"
     )
-    return fallback_url
+    return None
 
 
 def search_image(query, tokens=None):
@@ -123,11 +145,11 @@ def search_image(query, tokens=None):
     session.headers.update(HEADERS)
     ddg = _search_duckduckgo(session, query, tokens)
     if ddg:
-        print(f"plaatjes: duckduckgo treffer voor '{query}': {ddg}")
+        _log(f"plaatjes: duckduckgo treffer voor '{query}': {ddg}")
         return ddg
     bing = _search_bing(session, query, tokens)
     if bing:
-        print(f"plaatjes: bing-treffer voor '{query}': {bing}")
+        _log(f"plaatjes: bing-treffer voor '{query}': {bing}")
     return bing
 
 
@@ -216,13 +238,13 @@ def find_and_store_image(tool_id, name, brand, model):
     if query and query not in queries:
         queries.append(query)
     for query in queries:
-        print(f"plaatjes: zoeken naar '{query}'")
+        _log(f"plaatjes: zoeken naar '{query}'")
         image_url = search_image(query, tokens)
         if image_url:
             stored = download_image(image_url, tool_id)
             if stored:
-                print(f"plaatjes: opgeslagen {stored}")
+                _log(f"plaatjes: opgeslagen {stored}")
                 return stored
-            print(f"plaatjes: download faalde voor {image_url}")
-    print("plaatjes: geen bruikbare afbeelding gevonden")
+            _log(f"plaatjes: download faalde voor {image_url}")
+    _log("plaatjes: geen bruikbare afbeelding gevonden")
     return None
