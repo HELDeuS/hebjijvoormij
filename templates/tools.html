@@ -4,6 +4,7 @@
 <section>
     <h2>Gereedschap registreren</h2>
     <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% if friend and friend.is_admin %}
         <label>Eigenaar*
             <select name="owner_id" required>
@@ -88,6 +89,7 @@
                             <span class="meta">({{ link.linked_owner }}{% if link.linked_brand or link.linked_model %}, {{ [link.linked_brand, link.linked_model] | select | join(' ') }}{% endif %})</span>
                             {% if friend and (friend.is_admin or tool.owner_id == friend.id) %}
                             <form method="post" action="{{ url_for('tool_link', tool_id=tool.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="action" value="remove">
                                 <input type="hidden" name="linked_tool_id" value="{{ link.linked_id }}">
                                 <button type="submit" class="link-remove" title="Koppeling verwijderen">✕</button>
@@ -101,6 +103,7 @@
                     {% endif %}
                     {% if friend and (friend.is_admin or tool.owner_id == friend.id) %}
                     <form method="post" action="{{ url_for('tool_link', tool_id=tool.id) }}" class="inline link-add">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <select name="linked_tool_id" required>
                             <option value="">— kies gereedschap —</option>
                             {% for other in all_tools %}
@@ -132,23 +135,27 @@
                         <a href="{{ url_for('tool_edit', tool_id=tool.id) }}" class="button-link">Aanpassen</a>
                         <form method="post" action="{{ url_for('tool_delete', tool_id=tool.id) }}" class="inline"
                               onsubmit="return confirm('Gereedschap \'{{ tool.name }}\' verwijderen?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="reject">Verwijderen</button>
                         </form>
                     </div>
                     {% endif %}
                     {% if friend and (friend.is_admin or tool.owner_id == friend.id) %}
                     <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" enctype="multipart/form-data" class="inline upload-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="upload">
                         <input type="file" name="image_file" accept="image/*" required>
                         <button type="submit">Plaatje uploaden</button>
                     </form>
 <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline url-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="url">
                     <input type="url" name="image_url" placeholder="of plak een afbeeldings-URL" required>
                     <button type="submit">Toevoegen</button>
                     </form>
                     {% if tool.image_path %}
                     <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="remove">
                         <button type="submit" class="reject">Verwijderen</button>
                     </form>

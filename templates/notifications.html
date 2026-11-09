@@ -5,6 +5,7 @@
     <h2>Meldingen</h2>
     {% if notifications_list %}
     <form method="post" action="{{ url_for('notifications_read_all') }}" class="inline" style="margin-bottom: 1rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit">Alles als gelezen markeren</button>
     </form>
     <table>
@@ -23,6 +24,7 @@
                 <td>
                     {% if not n.is_read %}
                     <form method="post" action="{{ url_for('notification_read', notification_id=n.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="link-remove" title="Als gelezen markeren">✓</button>
                     </form>
                     {% endif %}

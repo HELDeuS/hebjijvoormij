@@ -4,6 +4,7 @@
 <section>
     <h2>Nieuwe kring aanmaken</h2>
     <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label>Naam* <input type="text" name="name" placeholder="bv. Buurtklussers" required></label>
         {% if friend and friend.is_admin %}
         <label>Kringbeheerder*
@@ -35,6 +36,7 @@
                 {% if member.is_circle_admin %}<span class="status uitgeleend">Kringbeheerder</span>{% endif %}
                 {% if friend and (friend.is_admin or circle.is_circle_admin) %}
                 <form method="post" action="{{ url_for('circle_members', circle_id=circle.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="remove">
                     <input type="hidden" name="member_id" value="{{ member.friend_id }}">
                     <button type="submit" class="link-remove" title="Uit kring verwijderen">✕</button>
@@ -45,6 +47,7 @@
         </ul>
         {% if friend and (friend.is_admin or circle.is_circle_admin) %}
         <form method="post" action="{{ url_for('circle_members', circle_id=circle.id) }}" class="inline link-add">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="add">
             <select name="member_id" required>
                 <option value="">— kies een vriend —</option>
@@ -76,6 +79,7 @@
                 {{ member.name }} <span class="meta">{{ member.email }}</span>
                 {% if member.is_circle_admin %}<span class="status uitgeleend">Kringbeheerder</span>{% endif %}
                 <form method="post" action="{{ url_for('circle_members', circle_id=circle.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="remove">
                     <input type="hidden" name="member_id" value="{{ member.friend_id }}">
                     <button type="submit" class="link-remove" title="Uit kring verwijderen">✕</button>
@@ -84,6 +88,7 @@
             {% endfor %}
         </ul>
         <form method="post" action="{{ url_for('circle_members', circle_id=circle.id) }}" class="inline link-add">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="add">
             <select name="member_id" required>
                 <option value="">— kies een vriend —</option>
@@ -97,6 +102,7 @@
             <a href="{{ url_for('circle_edit', circle_id=circle.id) }}" class="button-link">Naam wijzigen</a>
             <form method="post" action="{{ url_for('circle_delete', circle_id=circle.id) }}" class="inline"
                   onsubmit="return confirm('Kring \\'{{ circle.name }}\\' verwijderen?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="reject">Verwijderen</button>
             </form>
         </div>

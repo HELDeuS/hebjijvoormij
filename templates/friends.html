@@ -5,6 +5,7 @@
 <section>
     <h2>Standaard datumnotatie</h2>
     <form method="post" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="default_date_format_form" value="1">
         <label>Datumnotatie voor nieuwe gebruikers
             <select name="default_date_format" onchange="this.form.submit()">
@@ -32,10 +33,12 @@
                 <td>{{ f.email }}</td>
                 <td>
                     <form method="post" action="{{ url_for('friend_approve', friend_id=f.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit">Goedkeuren</button>
                     </form>
                     <form method="post" action="{{ url_for('friend_delete', friend_id=f.id) }}" class="inline"
                           onsubmit="return confirm('Aanvraag van \'{{ f.name }}\' afwijzen?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="reject">Afwijzen</button>
                     </form>
                 </td>
@@ -50,6 +53,7 @@
     <h2>Nieuwe vriend registreren</h2>
     {% if friend and friend.is_admin %}
     <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label>Naam* <input type="text" name="name" required></label>
         <label>E-mail* <input type="email" name="email" required></label>
         <label>Telefoon <input type="tel" name="phone"></label>
@@ -91,12 +95,14 @@
                     {% if friend and friend.is_admin and not f.is_super_admin %}
                         {% if f.status == 'actief' %}
                         <form method="post" action="{{ url_for('friend_status', friend_id=f.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="action" value="deactivate">
                             <input type="text" name="reason" placeholder="reden (optioneel)" class="reason-input">
                             <button type="submit" class="reject">Non-actief</button>
                         </form>
                         {% else %}
                         <form method="post" action="{{ url_for('friend_status', friend_id=f.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="action" value="activate">
                             <button type="submit">Activeren</button>
                         </form>
@@ -105,11 +111,13 @@
                     {% if friend and friend.is_super_admin and not f.is_super_admin %}
                         {% if f.is_admin %}
                         <form method="post" action="{{ url_for('friend_admin', friend_id=f.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="action" value="demote">
                             <button type="submit" class="return">Geen beheerder</button>
                         </form>
                         {% else %}
                         <form method="post" action="{{ url_for('friend_admin', friend_id=f.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="action" value="promote">
                             <button type="submit">Beheerder</button>
                         </form>
@@ -118,6 +126,7 @@
                     {% if friend and friend.is_admin and not f.is_super_admin %}
                         <form method="post" action="{{ url_for('friend_delete', friend_id=f.id) }}" class="inline"
                               onsubmit="return confirm('Account van \'{{ f.name }}\' verwijderen? Alle gereedschap en kringen gaan mee.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="link-remove" title="Account verwijderen">🗑</button>
                         </form>
                     {% endif %}

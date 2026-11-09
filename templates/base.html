@@ -37,6 +37,7 @@
         <button type="button" id="theme-toggle" class="theme-toggle" title="Donker/licht thema wisselen">🌙</button>
         <a href="{{ url_for('profile') }}" class="profile-link" title="Naar mijn profiel">👋 {{ friend.name }}</a>
         <form method="post" action="{{ url_for('logout') }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit">Uitloggen</button>
         </form>
     </div>

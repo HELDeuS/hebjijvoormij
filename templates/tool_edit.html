@@ -4,6 +4,7 @@
 <section class="login-box">
     <h2>Gereedschap aanpassen</h2>
     <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% if friend and friend.is_admin %}
         <label>Eigenaar*
             <select name="owner_id" required>

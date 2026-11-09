@@ -4,6 +4,7 @@
 <section>
     <h2>Leenverzoek aanmaken</h2>
     <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="action" value="request">
         <label>Gereedschap*
             <select name="tool_id" required>
@@ -63,6 +64,7 @@
                 <td>{{ s.owner_name }}</td>
                 <td>
                     <form method="post" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="request">
                         <input type="hidden" name="borrower_id" value="{{ friend.id }}">
                         <input type="hidden" name="tool_id" value="{{ s.id }}">
@@ -98,17 +100,20 @@
                 <td>
                     {% if tool.loan_id and tool.loan_status == 'aangevraagd' %}
                     <form method="post" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="approve">
                         <input type="hidden" name="loan_id" value="{{ tool.loan_id }}">
                         <button type="submit" class="approve">Goedkeuren</button>
                     </form>
                     <form method="post" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="reject">
                         <input type="hidden" name="loan_id" value="{{ tool.loan_id }}">
                         <button type="submit" class="reject">Weigeren</button>
                     </form>
                     {% elif tool.loan_id and tool.loan_status == 'uitgeleend' %}
                     <form method="post" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="return">
                         <input type="hidden" name="loan_id" value="{{ tool.loan_id }}">
                         <button type="submit" class="return">Terugontvangen</button>

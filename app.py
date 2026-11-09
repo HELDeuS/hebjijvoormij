@@ -1,9 +1,11 @@
 import os
+import secrets
 import time
 from functools import wraps
 
 from flask import (
     Flask,
+    abort,
     flash,
     g,
     redirect,
@@ -84,7 +86,19 @@ from images import download_image, upload_image
 from mail import send_email
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "dev-key-verander-dit")
+_secret_key = os.environ.get("SECRET_KEY")
+if not _secret_key:
+    raise RuntimeError(
+        "SECRET_KEY is verplicht. Zet een geheime waarde in de omgeving "
+        "of .env (zie .env.example); zonder sleutel zijn sessies niet "
+        "veilig te ondertekenen."
+    )
+app.secret_key = _secret_key
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+)
 
 STATUS_LABELS = {
     "aangevraagd": "Aangevraagd",
@@ -161,6 +175,7 @@ def inject_globals():
         "friends": get_friends() if me else [],
         "friend": me,
         "unread_notifications": get_unread_notification_count(me["id"]) if me else 0,
+        "csrf_token": _csrf_token,
     }
 
 
@@ -176,6 +191,21 @@ def login_required(view):
 
 _last_reminder_check = {"ts": 0.0}
 _schema_checked = {"done": False}
+
+
+def _csrf_token():
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_hex(32)
+    return session["csrf_token"]
+
+
+@app.before_request
+def verify_csrf():
+    if request.method == "POST":
+        token = request.form.get("csrf_token", "")
+        expected = session.get("csrf_token", "")
+        if not expected or not secrets.compare_digest(token, expected):
+            abort(400, description="Ongeldig of ontbrekend CSRF-token.")
 
 
 @app.before_request
@@ -286,7 +316,7 @@ def login():
         friend = get_friend_by_email(email)
         if not friend:
             _register_login_failure(email)
-            flash("Onbekend e-mailadres. Ben je al geregistreerd als vriend?", "error")
+            flash("Onjuist e-mailadres of wachtwoord.", "error")
         elif friend["status"] == "in_behandeling":
             flash(
                 "Je account wacht nog op goedkeuring door de beheerder.",
@@ -312,7 +342,7 @@ def login():
             return redirect(url_for("index"))
         elif not check_password_hash(friend["password_hash"], password):
             _register_login_failure(email)
-            flash("Onjuist wachtwoord.", "error")
+            flash("Onjuist e-mailadres of wachtwoord.", "error")
         elif friend["must_change_password"]:
             if len(new_password) < 6:
                 flash(
@@ -1200,6 +1230,8 @@ def loans():
                         combi_tool = get_tool(int(combi_id))
                         if not combi_tool or combi_tool["owner_id"] == friend["id"]:
                             continue
+                        if not any(t["id"] == combi_tool["id"] for t in visible):
+                            continue
                         if create_loan_request(
                             int(combi_id),
                             friend["id"],
@@ -1231,6 +1263,17 @@ def loans():
                 "reject": reject_loan,
                 "return": return_loan,
             }[action]
+            loan = get_loan(loan_id) if loan_id else None
+            loan_tool = get_tool(loan["tool_id"]) if loan else None
+            if not loan_tool or not (
+                friend["is_admin"] or loan_tool["owner_id"] == friend["id"]
+            ):
+                flash(
+                    "Alleen de eigenaar van het gereedschap of de beheerder "
+                    "kan deze actie uitvoeren.",
+                    "error",
+                )
+                return redirect(url_for("loans"))
             if loan_id and handler(loan_id):
                 flash(
                     {

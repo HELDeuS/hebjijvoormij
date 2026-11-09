@@ -90,6 +90,26 @@ meldingen en berichten.
   beheerder de totalen van alle kringen; per-vriend statistieken en
   een persoonlijk transactieoverzicht op het profiel.
 
+## Beveiliging
+
+- **CSRF**: elk formulier bevat een sessie-gebonden token; elke POST
+  zonder geldig token wordt geweigerd (HTTP 400).
+- **Toegangscontrole**: leningen goedkeuren/weigeren/teruggeven kan
+  alleen de eigenaar van het gereedschap (of de beheerder);
+  gereedschapbeheer, plaatjes en accountgegevens zijn eveneens
+  eigenaar-gebonden.
+- **SQL**: alle queries zijn geparametriseerd (geen SQL-injectie).
+- **XSS**: alle uitvoer wordt door Jinja2 automatisch geëscapet.
+- **SSRF**: de plaatjes-URL-functie weigert interne, lokale en
+  gereserveerde adressen en volgt geen redirects.
+- **Uploads**: bestanden worden met Pillow gevalideerd op echt
+  afbeeldingsformaat en minimale afmetingen.
+- **Sessies**: `SECRET_KEY` is verplicht (de app start zonder niet);
+  cookies zijn HttpOnly en SameSite=Lax.
+- **Inloggen**: rate limiting (5 pogingen per kwartier per account),
+  gehashte wachtwoorden (scrypt) en generieke foutmeldingen (geen
+  gebruikersnaam-enumeratie).
+
 ## Technologie
 
 - Python 3.10+ / Flask, server-side templates (Jinja2), één CSS-bestand

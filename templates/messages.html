@@ -5,6 +5,7 @@
     <h2>Nieuw bericht</h2>
     {% if contacts %}
     <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label>Aan
             <select name="recipient_id" required>
                 <option value="">— kies een vriend —</option>
@@ -37,6 +38,7 @@
                 <td>
                     {% if not m.is_read %}
                     <form method="post" action="{{ url_for('message_read', message_id=m.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="link-remove" title="Als gelezen markeren">✓</button>
                     </form>
                     {% endif %}

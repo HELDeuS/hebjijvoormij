@@ -10,6 +10,7 @@
         <a href="{{ url_for('friend_edit', friend_id=account.id) }}" class="button-link">Gegevens aanpassen</a>
         <form method="post" action="{{ url_for('friend_delete', friend_id=account.id) }}" class="inline"
               onsubmit="return confirm('Je account verwijderen? Al je gereedschap, uitleningen en kringen gaan mee.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="reject">Account verwijderen</button>
         </form>
     </div>

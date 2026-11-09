@@ -4,6 +4,7 @@
 <section class="login-box">
     <h2>Kring hernoemen</h2>
     <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label>Naam* <input type="text" name="name" value="{{ circle.name }}" required></label>
         <button type="submit">Opslaan</button>
         <a href="{{ url_for('circles') }}" class="hint">Annuleren</a>

@@ -4,6 +4,7 @@
 <section class="login-box">
     <h2>Account aanpassen</h2>
     <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label>Naam* <input type="text" name="name" value="{{ account.name }}" required></label>
         <label>E-mail* <input type="email" name="email" value="{{ account.email or '' }}" required></label>
         <label>Telefoon <input type="tel" name="phone" value="{{ account.phone or '' }}"></label>

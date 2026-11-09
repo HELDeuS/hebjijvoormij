@@ -30,17 +30,20 @@
         <div class="loan-actions">
             {% if active_loan.status == 'aangevraagd' %}
             <form method="post" action="{{ url_for('loans') }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="approve">
                 <input type="hidden" name="loan_id" value="{{ active_loan.id }}">
                 <button type="submit">Goedkeuren</button>
             </form>
             <form method="post" action="{{ url_for('loans') }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="reject">
                 <input type="hidden" name="loan_id" value="{{ active_loan.id }}">
                 <button type="submit" class="link-remove">Weigeren</button>
             </form>
             {% elif active_loan.status == 'uitgeleend' %}
             <form method="post" action="{{ url_for('loans') }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="return">
                 <input type="hidden" name="loan_id" value="{{ active_loan.id }}">
                 <button type="submit">Teruggekeerd</button>
@@ -53,6 +56,7 @@
         <p class="hint">Dit is je eigen gereedschap; je kunt het niet van jezelf lenen.</p>
         {% elif available %}
         <form method="post" action="{{ url_for('loans') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="request">
             <input type="hidden" name="tool_id" value="{{ tool.id }}">
             <label>Vanaf* <input type="date" name="date_from" required></label>
@@ -79,21 +83,25 @@
                 <a href="{{ url_for('tool_edit', tool_id=tool.id) }}" class="button-link">Aanpassen</a>
                 <form method="post" action="{{ url_for('tool_delete', tool_id=tool.id) }}" class="inline"
                       onsubmit="return confirm('Gereedschap \'{{ tool.name }}\' verwijderen?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="reject">Verwijderen</button>
                 </form>
             </div>
             <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" enctype="multipart/form-data" class="inline upload-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="upload">
                 <input type="file" name="image_file" accept="image/*" required>
                 <button type="submit">Plaatje uploaden</button>
             </form>
 <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline url-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="url">
             <input type="url" name="image_url" placeholder="of plak een afbeeldings-URL" required>
             <button type="submit">Toevoegen</button>
             </form>
             {% if tool.image_path %}
             <form method="post" action="{{ url_for('tool_image', tool_id=tool.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="remove">
                 <button type="submit" class="reject">Plaatje verwijderen</button>
             </form>
