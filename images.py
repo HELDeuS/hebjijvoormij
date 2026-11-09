@@ -67,6 +67,10 @@ def _search_duckduckgo(session, query, tokens=None):
 
 
 def _search_bing(session, query, tokens=None):
+    """Zoekt via Bing Afbeeldingen. Elk resultaat heeft een afbeeldings-URL
+    (murl) en een titel (t2); resultaten scoren op merk/model in de URL
+    of titel en op een afbeeldingsextensie. De hoogst scorende wint;
+    anders valt de zoekopdracht terug op de eerste echte afbeelding."""
     try:
         response = session.get(
             "https://www.bing.com/images/search",
@@ -75,18 +79,40 @@ def _search_bing(session, query, tokens=None):
         )
     except requests.RequestException:
         return None
-    urls = re.findall(r'murl&quot;:&quot;(.*?)&quot;', response.text)
-    for url in urls:
-        if (
-            url.startswith("http")
-            and _url_matches_tokens(url, tokens)
-            and any(
-                url.lower().split("?")[0].endswith(ext)
-                for ext in (".jpg", ".jpeg", ".png", ".webp")
-            )
-        ):
-            return url
-    return None
+    results = []
+    for chunk in response.text.split('class="iusc"')[1:]:
+        murl = re.search(r'murl&quot;:&quot;(.*?)&quot;', chunk)
+        title = re.search(r't2&quot;:&quot;(.*?)&quot;', chunk)
+        if murl and murl.group(1).startswith("http"):
+            results.append((murl.group(1), (title.group(1) if title else "").lower()))
+    if not results:
+        print(f"plaatjes: bing gaf geen resultaten voor '{query}'")
+        return None
+    best_url, best_score = None, -1
+    fallback_url = None
+    for url, title in results:
+        ext_ok = any(
+            url.lower().split("?")[0].endswith(ext)
+            for ext in (".jpg", ".jpeg", ".png", ".webp")
+        )
+        score = 0
+        if _url_matches_tokens(url, tokens):
+            score += 2
+        if tokens and any(token.lower() in title for token in tokens if token):
+            score += 2
+        if ext_ok:
+            score += 1
+        if ext_ok and fallback_url is None:
+            fallback_url = url
+        if score > best_score:
+            best_url, best_score = url, score
+    if best_score >= 3:
+        return best_url
+    print(
+        f"plaatjes: bing: geen relevante resultaten voor '{query}' "
+        f"(beste score {best_score} op {len(results)} resultaten)"
+    )
+    return fallback_url
 
 
 def search_image(query, tokens=None):
@@ -95,9 +121,14 @@ def search_image(query, tokens=None):
     afbeelding terug, of None als er niets bruikbaars gevonden is."""
     session = requests.Session()
     session.headers.update(HEADERS)
-    return _search_duckduckgo(session, query, tokens) or _search_bing(
-        session, query, tokens
-    )
+    ddg = _search_duckduckgo(session, query, tokens)
+    if ddg:
+        print(f"plaatjes: duckduckgo treffer voor '{query}': {ddg}")
+        return ddg
+    bing = _search_bing(session, query, tokens)
+    if bing:
+        print(f"plaatjes: bing-treffer voor '{query}': {bing}")
+    return bing
 
 
 def download_image(image_url, tool_id):
@@ -185,9 +216,13 @@ def find_and_store_image(tool_id, name, brand, model):
     if query and query not in queries:
         queries.append(query)
     for query in queries:
+        print(f"plaatjes: zoeken naar '{query}'")
         image_url = search_image(query, tokens)
         if image_url:
             stored = download_image(image_url, tool_id)
             if stored:
+                print(f"plaatjes: opgeslagen {stored}")
                 return stored
+            print(f"plaatjes: download faalde voor {image_url}")
+    print("plaatjes: geen bruikbare afbeelding gevonden")
     return None
