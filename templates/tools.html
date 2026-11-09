@@ -39,7 +39,9 @@
     <table class="tool-list">
         <thead>
             <tr>
+                <th></th>
                 <th><a href="{{ url_for('tools', view='list', sort='name', dir='desc' if sort == 'name' and direction == 'asc' else 'asc') }}">Soort {{ '▲' if sort == 'name' and direction == 'asc' else ('▼' if sort == 'name' else '') }}</a></th>
+                <th>Type</th>
                 <th><a href="{{ url_for('tools', view='list', sort='category', dir='desc' if sort == 'category' and direction == 'asc' else 'asc') }}">Categorie {{ '▲' if sort == 'category' and direction == 'asc' else ('▼' if sort == 'category' else '') }}</a></th>
                 <th><a href="{{ url_for('tools', view='list', sort='brand', dir='desc' if sort == 'brand' and direction == 'asc' else 'asc') }}">Merk {{ '▲' if sort == 'brand' and direction == 'asc' else ('▼' if sort == 'brand' else '') }}</a></th>
                 <th><a href="{{ url_for('tools', view='list', sort='owner', dir='desc' if sort == 'owner' and direction == 'asc' else 'asc') }}">Eigenaar {{ '▲' if sort == 'owner' and direction == 'asc' else ('▼' if sort == 'owner' else '') }}</a></th>
@@ -50,7 +52,17 @@
         <tbody>
             {% for tool in tools_list %}
             <tr>
+                <td class="thumb-cell">
+                    <a href="{{ url_for('tool_detail', tool_id=tool.id) }}">
+                    {% if tool.image_path %}
+                    <img src="{{ url_for('static', filename=tool.image_path) }}" alt="{{ tool.name }}" class="thumb">
+                    {% else %}
+                    <span class="thumb-placeholder">🔧</span>
+                    {% endif %}
+                    </a>
+                </td>
                 <td><a href="{{ url_for('tool_detail', tool_id=tool.id) }}" class="tool-title-link">{{ tool.name }}</a></td>
+                <td>{{ [tool.brand, tool.model] | select | join(' ') or "-" }}</td>
                 <td>{{ tool.category or "-" }}</td>
                 <td>{{ tool.brand or "-" }}</td>
                 <td>{{ tool.owner_name }}</td>
