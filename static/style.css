@@ -297,3 +297,5 @@ html.dark .tool-detail-image { background: #262d31; }
 .notif-type { display: inline-block; min-width: 90px; }
 
 .combi-option { display: flex; align-items: center; gap: .4rem; font-size: .9rem; }
+
+.loan-actions { display: flex; gap: .5rem; margin: .5rem 0; }

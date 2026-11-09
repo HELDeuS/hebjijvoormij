@@ -917,13 +917,14 @@ def tool_detail(tool_id):
     links = get_linked_tools_map([tool_id]).get(tool_id, [])
     active_loan = get_active_loan(tool_id)
     owner = get_friend(tool["owner_id"])
+    loan = get_loan(active_loan["id"]) if active_loan else None
     return render_template(
         "tool_detail.html",
         tool=tool,
         owner=owner,
         links=links,
         available=active_loan is None,
-        active_loan=active_loan,
+        active_loan=loan,
         is_own=tool["owner_id"] == me["id"],
         can_manage=_can_manage(tool),
     )
@@ -1133,7 +1134,7 @@ def loans():
                         "leenverzoek",
                         f"{friend['name']} wil '{tool['name']}' lenen van "
                         f"{date_from} tot {date_until}.",
-                        f"/tools/{tool_id}",
+                        "/loans",
                         tool_id,
                     )
                     combi_ids = request.form.getlist("combi_tool_ids")
@@ -1156,7 +1157,7 @@ def loans():
                                 "leenverzoek",
                                 f"{friend['name']} wil '{combi_tool['name']}' "
                                 f"lenen van {date_from} tot {date_until}.",
-                                f"/tools/{combi_tool['id']}",
+                                "/loans",
                                 combi_tool["id"],
                             )
                             flash(
@@ -1193,7 +1194,7 @@ def loans():
                             "goedgekeurd",
                             f"Je leenverzoek voor '{tool['name']}' is "
                             "goedgekeurd.",
-                            f"/tools/{loan['tool_id']}",
+                            "/loans",
                             loan_id,
                         )
                     elif action == "reject":
@@ -1201,7 +1202,7 @@ def loans():
                             loan["borrower_id"],
                             "geweigerd",
                             f"Je leenverzoek voor '{tool['name']}' is geweigerd.",
-                            f"/tools/{loan['tool_id']}",
+                            "/loans",
                             loan_id,
                         )
                     elif action == "return":
@@ -1210,7 +1211,7 @@ def loans():
                             "teruggekeerd",
                             f"'{tool['name']}' is als teruggekeerd "
                             "geregistreerd.",
-                            f"/tools/{loan['tool_id']}",
+                            "/loans",
                             loan_id,
                         )
             else:

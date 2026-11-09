@@ -26,6 +26,28 @@
             <span class="status beschikbaar">Beschikbaar</span>
             {% endif %}
         </p>
+        {% if active_loan and (friend.is_admin or tool.owner_id == friend.id) %}
+        <div class="loan-actions">
+            {% if active_loan.status == 'aangevraagd' %}
+            <form method="post" action="{{ url_for('loans') }}" class="inline">
+                <input type="hidden" name="action" value="approve">
+                <input type="hidden" name="loan_id" value="{{ active_loan.id }}">
+                <button type="submit">Goedkeuren</button>
+            </form>
+            <form method="post" action="{{ url_for('loans') }}" class="inline">
+                <input type="hidden" name="action" value="reject">
+                <input type="hidden" name="loan_id" value="{{ active_loan.id }}">
+                <button type="submit" class="link-remove">Weigeren</button>
+            </form>
+            {% elif active_loan.status == 'uitgeleend' %}
+            <form method="post" action="{{ url_for('loans') }}" class="inline">
+                <input type="hidden" name="action" value="return">
+                <input type="hidden" name="loan_id" value="{{ active_loan.id }}">
+                <button type="submit">Teruggekeerd</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
 
         {% if is_own %}
         <p class="hint">Dit is je eigen gereedschap; je kunt het niet van jezelf lenen.</p>
