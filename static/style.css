@@ -299,3 +299,6 @@ html.dark .tool-detail-image { background: #262d31; }
 .combi-option { display: flex; align-items: center; gap: .4rem; font-size: .9rem; }
 
 .loan-actions { display: flex; gap: .5rem; margin: .5rem 0; }
+
+.pagination { display: flex; gap: 1rem; align-items: center; margin: 1rem 0; }
+.pagination a { text-decoration: none; }

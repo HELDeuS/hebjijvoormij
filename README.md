@@ -110,6 +110,20 @@ meldingen en berichten.
   gehashte wachtwoorden (scrypt) en generieke foutmeldingen (geen
   gebruikersnaam-enumeratie).
 
+## Schaalbaarheid
+
+De app is gebouwd voor kleine kringen (tientallen gebruikers) maar
+blijft tot enkele honderden gebruikers bruikbaar:
+
+- **E-mail en herinneringen** worden in een achtergronddraad verstuurd;
+  een trage of onbereikbare SMTP-server blokkeert geen requests meer.
+- **Grote lijsten** (catalogus, kring-gereedschap, uitleningen) zijn
+  gepagineerd op 50 items per pagina.
+- **gunicorn** draait met 5 workers (vuistregel 2×CPU+1; pas aan op
+  je eigen server). Statische bestanden serveert nginx direct.
+- De databasepool staat op 10 verbindingen per worker; verhoog
+  MariaDB's `max_connections` als je veel workers draait.
+
 ## Technologie
 
 - Python 3.10+ / Flask, server-side templates (Jinja2), één CSS-bestand
@@ -275,7 +289,7 @@ User=hebjijvoormij
 Group=hebjijvoormij
 WorkingDirectory=/opt/hebjijvoormij/app
 EnvironmentFile=/opt/hebjijvoormij/app/.env
-ExecStart=/opt/hebjijvoormij/app/venv/bin/gunicorn --workers 2 --bind 127.0.0.1:5000 app:app
+ExecStart=/opt/hebjijvoormij/app/venv/bin/gunicorn --workers 5 --bind 127.0.0.1:5000 app:app
 Restart=on-failure
 RestartSec=5
 
@@ -318,6 +332,12 @@ sudo tee /etc/nginx/sites-available/hebjijvoormij > /dev/null <<'NGINX'
 server {
     listen 80;
     server_name gereedschap.voorbeeld.nl;
+
+    # statische bestanden (css, plaatjes) serveert nginx zelf
+    location /static/ {
+        alias /opt/hebjijvoormij/app/static/;
+        expires 7d;
+    }
 
     location / {
         proxy_pass http://127.0.0.1:5000;

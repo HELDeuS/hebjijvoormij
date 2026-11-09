@@ -1,0 +1,11 @@
+{% if total_pages is defined and total_pages > 1 %}
+<nav class="pagination">
+    {% if page > 1 %}
+    <a href="{{ page_base }}&page={{ page - 1 }}">← Vorige</a>
+    {% endif %}
+    <span>Pagina {{ page }} van {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="{{ page_base }}&page={{ page + 1 }}">Volgende →</a>
+    {% endif %}
+</nav>
+{% endif %}

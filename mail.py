@@ -1,5 +1,6 @@
 import os
 import smtplib
+import threading
 from email.mime.text import MIMEText
 
 
@@ -34,3 +35,14 @@ def send_email(to_email, subject, body):
     except Exception as exc:
         print(f"mail: verzending aan {to_email} faalde: {exc}", flush=True)
         return False
+
+
+def send_email_async(to_email, subject, body):
+    """Verstuurt een e-mail in een achtergronddraad, zodat de
+    webrequest nooit op een trage of onbereikbare SMTP-server wacht."""
+    thread = threading.Thread(
+        target=send_email,
+        args=(to_email, subject, body),
+        daemon=True,
+    )
+    thread.start()

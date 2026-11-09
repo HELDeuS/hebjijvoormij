@@ -30,6 +30,7 @@
     {% else %}
     <p>Geen gereedschap gevonden{% if search or category_filter %} voor deze zoekopdracht{% endif %}.</p>
     {% endif %}
+    {% include "_pagination.html" %}
     <p><a href="{{ url_for('circles') }}" class="hint">← Terug naar kringen</a></p>
 </section>
 {% endblock %}

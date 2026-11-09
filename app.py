@@ -1,5 +1,6 @@
 import os
 import secrets
+import threading
 import time
 from functools import wraps
 
@@ -83,7 +84,7 @@ from db.db import (
     update_tool,
 )
 from images import download_image, upload_image
-from mail import send_email
+from mail import send_email_async
 
 app = Flask(__name__)
 _secret_key = os.environ.get("SECRET_KEY")
@@ -163,7 +164,7 @@ def _notify(friend_id, type_, message, link=None, ref_id=None):
         recipient = get_friend(friend_id)
         if recipient and recipient.get("email"):
             subject = f"hebjijvoormij - {NOTIFICATION_EMAIL_SUBJECTS.get(type_, 'Melding')}"
-            send_email(recipient["email"], subject, message)
+            send_email_async(recipient["email"], subject, message)
     except Exception as exc:
         app.logger.warning("E-mail bij melding faalde: %s", exc)
 
@@ -227,6 +228,14 @@ def load_current_friend():
     g.friend = friend
     if friend and time.time() - _last_reminder_check["ts"] > 3600:
         _last_reminder_check["ts"] = time.time()
+        _run_reminder_check()
+
+
+def _run_reminder_check():
+    """Herinneringen controleren en versturen in een achtergronddraad,
+    zodat de request niet op de database- en e-mailwerk wacht."""
+
+    def work():
         try:
             created = create_overdue_reminders()
             for reminder in created or []:
@@ -237,6 +246,8 @@ def load_current_friend():
                 )
         except Exception as exc:
             app.logger.warning("Herinneringscontrole mislukt: %s", exc)
+
+    threading.Thread(target=work, daemon=True).start()
 
 
 _login_failures = {}
@@ -664,10 +675,15 @@ def circle_tools(circle_id):
     }
     if sort in sort_keys:
         tools_list = sorted(tools_list, key=sort_keys[sort], reverse=direction == "desc")
+    page = request.args.get("page", 1, type=int) or 1
+    per_page = 50
+    total_pages = max(1, -(-len(tools_list) // per_page))
+    page = min(max(1, page), total_pages)
+    paged_tools = tools_list[(page - 1) * per_page : page * per_page]
     return render_template(
         "circle_tools.html",
         circle=circle,
-        tools_list=tools_list,
+        tools_list=paged_tools,
         links=get_linked_tools_map([t["id"] for t in tools_list]),
         view=view,
         sort=sort,
@@ -683,6 +699,17 @@ def circle_tools(circle_id):
             category=category_filter,
         ),
         list_action=url_for("circle_tools", circle_id=circle_id),
+        page=page,
+        total_pages=total_pages,
+        page_base=url_for(
+            "circle_tools",
+            circle_id=circle_id,
+            view=view,
+            q=search,
+            category=category_filter,
+            sort=sort,
+            dir=direction,
+        ),
     )
 
 
@@ -923,9 +950,14 @@ def tools():
     }
     if sort in sort_keys:
         tools_list = sorted(tools_list, key=sort_keys[sort], reverse=direction == "desc")
+    page = request.args.get("page", 1, type=int) or 1
+    per_page = 50
+    total_pages = max(1, -(-len(tools_list) // per_page))
+    page = min(max(1, page), total_pages)
+    paged_tools = tools_list[(page - 1) * per_page : page * per_page]
     return render_template(
         "tools.html",
-        tools_list=tools_list,
+        tools_list=paged_tools,
         all_tools=tools_list,
         links=get_linked_tools_map([t["id"] for t in tools_list]),
         view=view,
@@ -937,6 +969,16 @@ def tools():
         category_filter=category_filter,
         list_base=url_for("tools", view="list", q=search, category=category_filter),
         list_action=url_for("tools"),
+        page=page,
+        total_pages=total_pages,
+        page_base=url_for(
+            "tools",
+            view=view,
+            q=search,
+            category=category_filter,
+            sort=sort,
+            dir=direction,
+        ),
     )
 
 
@@ -1389,6 +1431,11 @@ def loans():
         ]
     else:
         filter_circles = []
+    page = request.args.get("page", 1, type=int) or 1
+    per_page = 50
+    total_pages = max(1, -(-len(loans_list) // per_page))
+    page = min(max(1, page), total_pages)
+    paged_loans = loans_list[(page - 1) * per_page : page * per_page]
     return render_template(
         "loans.html",
         friend=friend,
@@ -1396,13 +1443,22 @@ def loans():
         friend_tools=get_friend_tools(friend["id"]),
         transactions=get_friend_transactions(friend["id"]),
         combi_suggestions=get_combi_suggestions(friend["id"]),
-        loans_list=loans_list,
+        loans_list=paged_loans,
         combi_options=combi_options,
         status_filter=status_filter,
         circle_filter=circle_filter,
         filter_circles=filter_circles,
         sort=sort,
         direction=direction,
+        page=page,
+        total_pages=total_pages,
+        page_base=url_for(
+            "loans",
+            status=status_filter,
+            circle_filter=circle_filter,
+            sort=sort,
+            dir=direction,
+        ),
     )
 
 

@@ -55,6 +55,7 @@
     {% if tools_list %}
     {% if view == 'list' %}
     {% include "_tool_list.html" %}
+    {% include "_pagination.html" %}
     {% else %}
     <div class="tool-grid">
         {% for tool in tools_list %}
@@ -166,7 +167,7 @@
         </article>
         {% endfor %}
     </div>
-    {% endif %}
+    {% include "_pagination.html" %}    {% endif %}
     {% else %}
     <p>Nog geen gereedschap geregistreerd.</p>
     {% endif %}
