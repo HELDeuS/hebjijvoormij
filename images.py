@@ -91,9 +91,9 @@ def _search_duckduckgo(session, query, tokens=None):
 
 def _search_bing(session, query, tokens=None):
     """Zoekt via Bing Afbeeldingen. Elk resultaat heeft een afbeeldings-URL
-    (murl) en een titel (t2); resultaten scoren op merk/model in de URL
-    of titel en op een afbeeldingsextensie. De hoogst scorende wint;
-    anders valt de zoekopdracht terug op de eerste echte afbeelding."""
+    (murl), titel (t), omschrijving (desc) en bronpagina (purl);
+    resultaten scoren op merk/model in die velden en op een
+    afbeeldingsextensie. De hoogst scorende wint; anders geen resultaat."""
     try:
         response = session.get(
             "https://www.bing.com/images/search",
@@ -105,15 +105,23 @@ def _search_bing(session, query, tokens=None):
     results = []
     for chunk in response.text.split('class="iusc"')[1:]:
         murl = re.search(r'murl&quot;:&quot;(.*?)&quot;', chunk)
-        title = re.search(r't2&quot;:&quot;(.*?)&quot;', chunk)
+        title = re.search(r'&quot;t&quot;:&quot;(.*?)&quot;', chunk)
+        desc = re.search(r'&quot;desc&quot;:&quot;(.*?)&quot;', chunk)
+        purl = re.search(r'purl&quot;:&quot;(.*?)&quot;', chunk)
         if murl and murl.group(1).startswith("http"):
-            results.append((murl.group(1), (title.group(1) if title else "").lower()))
+            results.append(
+                (
+                    murl.group(1),
+                    (title.group(1) if title else "").lower(),
+                    (desc.group(1) if desc else "").lower(),
+                    (purl.group(1) if purl else "").lower(),
+                )
+            )
     if not results:
         _log(f"plaatjes: bing gaf geen resultaten voor '{query}'")
         return None
     best_url, best_score = None, -1
-    fallback_url = None
-    for url, title in results:
+    for url, title, desc, purl in results:
         ext_ok = any(
             url.lower().split("?")[0].endswith(ext)
             for ext in (".jpg", ".jpeg", ".png", ".webp")
@@ -121,8 +129,13 @@ def _search_bing(session, query, tokens=None):
         score = 0
         if _url_matches_tokens(url, tokens):
             score += 2
-        if tokens and any(token.lower() in title for token in tokens if token):
+        if tokens and any(
+            token.lower() in title or token.lower() in desc
+            for token in tokens if token
+        ):
             score += 2
+        if _url_matches_tokens(purl, tokens):
+            score += 1
         if ext_ok:
             score += 1
         if score > best_score:
