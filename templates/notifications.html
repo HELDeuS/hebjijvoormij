@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Meldingen - hebjijvoormij{% endblock %}
+{% block content %}
+<section>
+    <h2>Meldingen</h2>
+    {% if notifications_list %}
+    <form method="post" action="{{ url_for('notifications_read_all') }}" class="inline" style="margin-bottom: 1rem;">
+        <button type="submit">Alles als gelezen markeren</button>
+    </form>
+    <table>
+        <thead>
+            <tr><th>Datum</th><th>Type</th><th>Bericht</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for n in notifications_list %}
+            <tr class="{{ 'notif-unread' if not n.is_read else 'notif-read' }}">
+                <td>{{ n.created_at.strftime("%d-%m-%Y %H:%M") }}</td>
+                <td><span class="notif-type status {{ 'aangevraagd' if n.type in ('leenverzoek', 'herinnering') else ('uitgeleend' if n.type in ('goedgekeurd', 'bericht') else 'geweigerd') }}">{{ n.type }}</span></td>
+                <td>
+                    {% if n.link %}<a href="{{ n.link }}">{{ n.message }}</a>
+                    {% else %}{{ n.message }}{% endif %}
+                </td>
+                <td>
+                    {% if not n.is_read %}
+                    <form method="post" action="{{ url_for('notification_read', notification_id=n.id) }}" class="inline">
+                        <button type="submit" class="link-remove" title="Als gelezen markeren">✓</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Geen meldingen.</p>
+    {% endif %}
+</section>
+{% endblock %}

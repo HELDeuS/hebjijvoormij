@@ -33,6 +33,20 @@
 
 <section>
     <h2>Volledige catalogus</h2>
+    <form method="get" class="filter-form">
+        <input type="hidden" name="view" value="{{ view }}">
+        <label>Zoeken <input type="search" name="q" value="{{ search or '' }}" placeholder="naam, merk, type of omschrijving"></label>
+        <label>Categorie
+            <select name="category" onchange="this.form.submit()">
+                <option value="">Alle</option>
+                {% for c in categories %}
+                <option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit">Zoeken</button>
+        <a href="{{ url_for('tools', view=view) }}" class="hint">Wissen</a>
+    </form>
     <div class="view-toggle">
         <a href="{{ url_for('tools', view='cards') }}" class="toggle {{ 'active' if view == 'cards' else '' }}">Kaarten</a>
         <a href="{{ url_for('tools', view='list') }}" class="toggle {{ 'active' if view == 'list' else '' }}">Lijst</a>

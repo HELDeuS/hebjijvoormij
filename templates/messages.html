@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Berichten - hebjijvoormij{% endblock %}
+{% block content %}
+<section>
+    <h2>Nieuw bericht</h2>
+    {% if contacts %}
+    <form method="post">
+        <label>Aan
+            <select name="recipient_id" required>
+                <option value="">— kies een vriend —</option>
+                {% for c in contacts %}
+                <option value="{{ c.id }}">{{ c.name }} ({{ c.email }})</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Bericht <textarea name="body" rows="3" required style="min-width: 300px;"></textarea></label>
+        <button type="submit">Versturen</button>
+    </form>
+    {% else %}
+    <p>Je kunt alleen berichten sturen naar vrienden met wie je een kring deelt.</p>
+    {% endif %}
+</section>
+
+<section>
+    <h2>Ontvangen</h2>
+    {% if inbox %}
+    <table>
+        <thead>
+            <tr><th>Van</th><th>Bericht</th><th>Datum</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for m in inbox %}
+            <tr class="{{ 'notif-unread' if not m.is_read else 'notif-read' }}">
+                <td>{{ m.sender_name }}</td>
+                <td>{{ m.body }}</td>
+                <td>{{ m.created_at.strftime("%d-%m-%Y %H:%M") }}</td>
+                <td>
+                    {% if not m.is_read %}
+                    <form method="post" action="{{ url_for('message_read', message_id=m.id) }}" class="inline">
+                        <button type="submit" class="link-remove" title="Als gelezen markeren">✓</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Nog geen berichten ontvangen.</p>
+    {% endif %}
+</section>
+
+<section>
+    <h2>Verzonden</h2>
+    {% if sent %}
+    <table>
+        <thead>
+            <tr><th>Aan</th><th>Bericht</th><th>Datum</th></tr>
+        </thead>
+        <tbody>
+            {% for m in sent %}
+            <tr>
+                <td>{{ m.recipient_name }}</td>
+                <td>{{ m.body }}</td>
+                <td>{{ m.created_at.strftime("%d-%m-%Y %H:%M") }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Nog geen berichten verstuurd.</p>
+    {% endif %}
+</section>
+{% endblock %}

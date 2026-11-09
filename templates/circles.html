@@ -26,6 +26,7 @@
     <article class="circle-card">
         <h3>{{ circle.name }} <span class="meta">({{ circle.member_count }} leden)</span>
             {% if circle.is_circle_admin %}<span class="status beschikbaar">Jij bent kringbeheerder</span>{% endif %}
+            <a href="{{ url_for('circle_tools', circle_id=circle.id) }}" class="button-link">Gereedschap van deze kring</a>
         </h3>
         <ul class="member-list">
             {% for member in members[circle.id] %}
@@ -66,7 +67,9 @@
     <h2>Alle kringen (beheer)</h2>
     {% for circle in all_circles %}
     <article class="circle-card">
-        <h3>{{ circle.name }} <span class="meta">({{ circle.member_count }} leden)</span></h3>
+        <h3>{{ circle.name }} <span class="meta">({{ circle.member_count }} leden)</span>
+            <a href="{{ url_for('circle_tools', circle_id=circle.id) }}" class="button-link">Gereedschap van deze kring</a>
+        </h3>
         <ul class="member-list">
             {% for member in all_members[circle.id] %}
             <li>

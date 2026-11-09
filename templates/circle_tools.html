@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Kring-gereedschap - hebjijvoormij{% endblock %}
+{% block content %}
+<section>
+    <h2>Gereedschap van kring "{{ circle.name }}"</h2>
+    {% if tools_list %}
+    {% include "_tool_grid.html" %}
+    {% else %}
+    <p>De leden van deze kring hebben nog geen gereedschap geregistreerd.</p>
+    {% endif %}
+    <p><a href="{{ url_for('circles') }}" class="hint">← Terug naar kringen</a></p>
+</section>
+{% endblock %}

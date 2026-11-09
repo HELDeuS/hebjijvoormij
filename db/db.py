@@ -180,6 +180,21 @@ def ensure_schema():
             "model": "ALTER TABLE tools ADD COLUMN model VARCHAR(100)",
             "image_path": "ALTER TABLE tools ADD COLUMN image_path VARCHAR(255)",
         }
+        loan_columns = {
+            row["COLUMN_NAME"]
+            for row in db._query(
+                "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+                "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'loans'",
+                (DB_CONFIG["database"],),
+            )
+        }
+        for column, statement in {
+            "note": "ALTER TABLE loans ADD COLUMN note TEXT",
+            "date_from": "ALTER TABLE loans ADD COLUMN date_from DATE",
+            "date_until": "ALTER TABLE loans ADD COLUMN date_until DATE",
+        }.items():
+            if column not in loan_columns:
+                db._execute(statement)
         for column, statement in tool_migrations.items():
             if column not in tool_columns:
                 db._execute(statement)
@@ -425,6 +440,12 @@ def update_tool(tool_id, owner_id, name, description, category, brand, model):
             return False
 
 
+def get_loan(loan_id):
+    with Database() as db:
+        rows = db._query("SELECT * FROM loans WHERE id = %s", (loan_id,))
+        return rows[0] if rows else None
+
+
 def get_active_loan(tool_id):
     """Geeft de openstaande lening of leenaanvraag van een gereedschap
     terug, of None als het gereedschap beschikbaar is."""
@@ -494,17 +515,146 @@ def get_friend_tools(owner_id):
         )
 
 
-def create_loan_request(tool_id, borrower_id):
+def create_loan_request(tool_id, borrower_id, note=None, date_from=None, date_until=None):
     with Database() as db:
         try:
             db._execute(
-                "INSERT INTO loans (tool_id, borrower_id, status) "
-                "VALUES (%s, %s, 'aangevraagd')",
-                (tool_id, borrower_id),
+                "INSERT INTO loans (tool_id, borrower_id, status, note, date_from, date_until) "
+                "VALUES (%s, %s, 'aangevraagd', %s, %s, %s)",
+                (tool_id, borrower_id, note, date_from, date_until),
             )
             return True
         except mysql.connector.errors.IntegrityError:
             return False
+
+
+def create_notification(friend_id, type_, message, link=None, ref_id=None):
+    with Database() as db:
+        db._execute(
+            "INSERT INTO notifications (friend_id, type, message, link, ref_id) "
+            "VALUES (%s, %s, %s, %s, %s)",
+            (friend_id, type_, message, link, ref_id),
+        )
+
+
+def get_notifications(friend_id):
+    with Database() as db:
+        return db._query(
+            "SELECT * FROM notifications WHERE friend_id = %s "
+            "ORDER BY created_at DESC LIMIT 50",
+            (friend_id,),
+        )
+
+
+def get_unread_notification_count(friend_id):
+    with Database() as db:
+        rows = db._query(
+            "SELECT COUNT(*) AS n FROM notifications "
+            "WHERE friend_id = %s AND is_read = 0",
+            (friend_id,),
+        )
+        return rows[0]["n"] if rows else 0
+
+
+def mark_notification_read(notification_id, friend_id):
+    with Database() as db:
+        db._execute(
+            "UPDATE notifications SET is_read = 1 "
+            "WHERE id = %s AND friend_id = %s",
+            (notification_id, friend_id),
+        )
+
+
+def mark_all_notifications_read(friend_id):
+    with Database() as db:
+        db._execute(
+            "UPDATE notifications SET is_read = 1 WHERE friend_id = %s",
+            (friend_id,),
+        )
+
+
+def create_overdue_reminders():
+    """Maakt een herinnering voor elke uitlening die over de afgesproken
+    einddatum heen is; maximaal een herinnering per lening per dag."""
+    with Database() as db:
+        overdue = db._query(
+            """
+            SELECT l.id, l.tool_id, l.borrower_id, l.date_until,
+                   t.name AS tool_name, t.owner_id,
+                   bf.name AS borrower_name
+            FROM loans l
+            JOIN tools t ON t.id = l.tool_id
+            JOIN friends bf ON bf.id = l.borrower_id
+            WHERE l.status = 'uitgeleend'
+              AND l.date_until IS NOT NULL
+              AND l.date_until < CURDATE()
+              AND NOT EXISTS (
+                  SELECT 1 FROM notifications n
+                  WHERE n.ref_id = l.id AND n.type = 'herinnering'
+                    AND n.created_at >= CURDATE()
+              )
+            """
+        )
+        for loan in overdue:
+            db._execute(
+                "INSERT INTO notifications (friend_id, type, message, link, ref_id) "
+                "VALUES (%s, 'herinnering', %s, %s, %s)",
+                (
+                    loan["owner_id"],
+                    f"'{loan['tool_name']}' is nog niet terug van "
+                    f"{loan['borrower_name']} (afgesproken tot "
+                    f"{loan['date_until'].strftime('%d-%m-%Y')}).",
+                    f"/tools/{loan['tool_id']}",
+                    loan["id"],
+                ),
+            )
+        return len(overdue)
+
+
+def send_message(sender_id, recipient_id, body):
+    with Database() as db:
+        db._execute(
+            "INSERT INTO messages (sender_id, recipient_id, body) "
+            "VALUES (%s, %s, %s)",
+            (sender_id, recipient_id, body),
+        )
+
+
+def get_inbox(friend_id):
+    with Database() as db:
+        return db._query(
+            """
+            SELECT m.*, f.name AS sender_name, f.email AS sender_email
+            FROM messages m
+            JOIN friends f ON f.id = m.sender_id
+            WHERE m.recipient_id = %s
+            ORDER BY m.created_at DESC LIMIT 50
+            """,
+            (friend_id,),
+        )
+
+
+def get_sent_messages(friend_id):
+    with Database() as db:
+        return db._query(
+            """
+            SELECT m.*, f.name AS recipient_name
+            FROM messages m
+            JOIN friends f ON f.id = m.recipient_id
+            WHERE m.sender_id = %s
+            ORDER BY m.created_at DESC LIMIT 50
+            """,
+            (friend_id,),
+        )
+
+
+def mark_message_read(message_id, friend_id):
+    with Database() as db:
+        db._execute(
+            "UPDATE messages SET is_read = 1 "
+            "WHERE id = %s AND recipient_id = %s",
+            (message_id, friend_id),
+        )
 
 
 def approve_loan(loan_id):

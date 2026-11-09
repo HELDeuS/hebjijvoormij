@@ -33,8 +33,19 @@ gereedschap uitleensysteem
   beheerder. Bij een leenverzoek
   verschijnt er bovendien een tip en een paneel met combi-suggesties om
   bijbehorend gereedschap direct mee te lenen.
-- **Uitleningen met status** – leenverzoeken doorlopen de statuscyclus
-  `aangevraagd` → `uitgeleend` → `teruggekeerd` (of `geweigerd`).
+- **Uitleningen met status** – leenverzoeken met vanaf- en tot-datum en
+  optionele notitie doorlopen de statuscyclus `aangevraagd` →
+  `uitgeleend` → `teruggekeerd` (of `geweigerd`).
+- **Meldingen** – bel met teller in de balk: leenverzoeken,
+  goedkeuringen, weigeringen, terugkeer, nieuwe berichten en dagelijkse
+  herinneringen voor gereedschap dat over de afgesproken einddatum heen
+  is.
+- **Berichten** – gebruikers sturen berichten naar kringgenoten (en de
+  beheerder naar iedereen).
+- **Zoeken en filteren** – in de catalogus op naam, merk, type en
+  omschrijving, plus een categoriefilter.
+- **Kring-gereedschap** – alle gereedschap van een kring in een
+  overzicht via de kringenpagina.
 - **Vriendenkringen** – iedereen kan een kring aanmaken en wordt dan
   automatisch kringbeheerder; die kan leden toevoegen en verwijderen.
   De beheerder kan bij het aanmaken een andere kringbeheerder kiezen
@@ -107,6 +118,9 @@ Zie `.env.example` voor een compleet voorbeeldbestand.
    pip install -r requirements.txt
    python app.py
    ```
+
+   Voor productie draait de app onder gunicorn (zie de Ubuntu-handleiding);
+   `python app.py` is de ontwikkelmodus.
 
    Werkt je MariaDB-root met wachtwoord-login (bv. lokaal op een
    ontwikkelmachine), dan maakt de app de database en tabellen automatisch
@@ -296,7 +310,7 @@ User=hebjijvoormij
 Group=hebjijvoormij
 WorkingDirectory=/opt/hebjijvoormij/app
 EnvironmentFile=/opt/hebjijvoormij/app/.env
-ExecStart=/opt/hebjijvoormij/app/venv/bin/python app.py
+ExecStart=/opt/hebjijvoormij/app/venv/bin/gunicorn --workers 2 --bind 127.0.0.1:5000 app:app
 Restart=on-failure
 RestartSec=5
 

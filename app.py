@@ -1,4 +1,5 @@
 import os
+import time
 from functools import wraps
 
 from flask import (
@@ -23,6 +24,8 @@ from db.db import (
     approve_loan,
     create_circle,
     create_loan_request,
+    create_notification,
+    create_overdue_reminders,
     delete_circle,
     delete_friend,
     delete_tool,
@@ -30,33 +33,42 @@ from db.db import (
     ensure_schema,
     get_circle,
     get_circle_members,
+    get_circle_stats,
     get_circles,
-    get_scoped_loans,
     get_combi_suggestions,
     get_distinct_values,
     get_active_loan,
     get_friend,
     get_friend_by_email,
     get_friends,
-    get_circle_stats,
     get_friend_stats,
     get_friend_tools,
-    get_global_stats,
     get_friend_transactions,
+    get_global_stats,
+    get_inbox,
     get_linked_tools_map,
+    get_loan,
+    get_notifications,
     get_overview,
+    get_sent_messages,
+    get_scoped_loans,
     get_tool,
     get_tools,
+    get_unread_notification_count,
     get_visible_tools,
     init_db,
     is_circle_admin,
+    mark_all_notifications_read,
+    mark_message_read,
+    mark_notification_read,
+    register_friend,
     remove_circle_member,
     remove_tool_image,
     remove_tool_link,
     reset_friend_password,
     reject_loan,
     return_loan,
-    register_friend,
+    send_message,
     set_friend_admin,
     set_friend_password,
     set_friend_status,
@@ -82,9 +94,11 @@ app.jinja_env.globals.update(STATUS_LABELS=STATUS_LABELS)
 
 @app.context_processor
 def inject_globals():
+    me = g.get("friend")
     return {
-        "friends": get_friends() if g.get("friend") else [],
-        "friend": g.get("friend"),
+        "friends": get_friends() if me else [],
+        "friend": me,
+        "unread_notifications": get_unread_notification_count(me["id"]) if me else 0,
     }
 
 
@@ -98,6 +112,9 @@ def login_required(view):
     return wrapped
 
 
+_last_reminder_check = {"ts": 0.0}
+
+
 @app.before_request
 def load_current_friend():
     friend_id = session.get("friend_id")
@@ -106,6 +123,36 @@ def load_current_friend():
         session.clear()
         friend = None
     g.friend = friend
+    if friend and time.time() - _last_reminder_check["ts"] > 3600:
+        _last_reminder_check["ts"] = time.time()
+        try:
+            create_overdue_reminders()
+        except Exception as exc:
+            app.logger.warning("Herinneringscontrole mislukt: %s", exc)
+
+
+_login_failures = {}
+_LOGIN_WINDOW_SECONDS = 15 * 60
+_LOGIN_MAX_FAILURES = 5
+
+
+def _login_blocked(email):
+    now = time.time()
+    failures = [
+        t
+        for t in _login_failures.get(email, [])
+        if now - t < _LOGIN_WINDOW_SECONDS
+    ]
+    _login_failures[email] = failures
+    return len(failures) >= _LOGIN_MAX_FAILURES
+
+
+def _register_login_failure(email):
+    _login_failures.setdefault(email, []).append(time.time())
+
+
+def _clear_login_failures(email):
+    _login_failures.pop(email, None)
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -151,8 +198,16 @@ def login():
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         new_password = request.form.get("new_password", "")
+        if _login_blocked(email):
+            flash(
+                "Te veel mislukte inlogpogingen; probeer het over een "
+                "kwartier nog eens.",
+                "error",
+            )
+            return render_template("login.html")
         friend = get_friend_by_email(email)
         if not friend:
+            _register_login_failure(email)
             flash("Onbekend e-mailadres. Ben je al geregistreerd als vriend?", "error")
         elif friend["status"] == "in_behandeling":
             flash(
@@ -170,6 +225,7 @@ def login():
         elif friend["password_hash"] is None:
             set_friend_password(friend["id"], generate_password_hash(password))
             session["friend_id"] = friend["id"]
+            _clear_login_failures(email)
             flash(
                 f"Welkom {friend['name']}! Je wachtwoord is ingesteld; "
                 "gebruik het voortaan om in te loggen.",
@@ -177,6 +233,7 @@ def login():
             )
             return redirect(url_for("index"))
         elif not check_password_hash(friend["password_hash"], password):
+            _register_login_failure(email)
             flash("Onjuist wachtwoord.", "error")
         elif friend["must_change_password"]:
             if len(new_password) < 6:
@@ -188,12 +245,14 @@ def login():
                 return render_template("login.html", show_change=True, email=email)
             set_friend_password(friend["id"], generate_password_hash(new_password))
             session["friend_id"] = friend["id"]
+            _clear_login_failures(email)
             flash(
                 f"Welkom {friend['name']}! Je wachtwoord is gewijzigd.", "success"
             )
             return redirect(url_for("index"))
         else:
             session["friend_id"] = friend["id"]
+            _clear_login_failures(email)
             flash(f"Welkom terug, {friend['name']}!", "success")
             return redirect(url_for("index"))
     return render_template("login.html")
@@ -358,6 +417,106 @@ def stats():
         global_stats=get_global_stats(),
         my_circle_stats=my_circle_stats,
         all_circle_stats=all_circle_stats,
+    )
+
+
+@app.route("/notifications")
+@login_required
+def notifications():
+    me = g.friend
+    return render_template(
+        "notifications.html",
+        notifications_list=get_notifications(me["id"]),
+    )
+
+
+@app.route("/notifications/<int:notification_id>/read", methods=["POST"])
+@login_required
+def notification_read(notification_id):
+    mark_notification_read(notification_id, g.friend["id"])
+    return redirect(url_for("notifications"))
+
+
+@app.route("/notifications/read-all", methods=["POST"])
+@login_required
+def notifications_read_all():
+    mark_all_notifications_read(g.friend["id"])
+    flash("Alle meldingen als gelezen gemarkeerd.", "success")
+    return redirect(url_for("notifications"))
+
+
+@app.route("/messages", methods=["GET", "POST"])
+@login_required
+def messages():
+    me = g.friend
+    if request.method == "POST":
+        recipient_id = request.form.get("recipient_id", type=int)
+        body = request.form.get("body", "").strip()
+        recipient = get_friend(recipient_id) if recipient_id else None
+        visible_ids = {me["id"]} | {
+            t["owner_id"] for t in get_visible_tools(me["id"])
+        }
+        if not recipient or not body:
+            flash("Kies een ontvanger en schrijf een bericht.", "error")
+        elif recipient["id"] not in visible_ids and not me["is_admin"]:
+            flash(
+                "Je kunt alleen berichten sturen naar vrienden met wie je "
+                "een kring deelt.",
+                "error",
+            )
+        else:
+            send_message(me["id"], recipient_id, body)
+            create_notification(
+                recipient_id,
+                "bericht",
+                f"Je hebt een nieuw bericht van {me['name']}.",
+                "/messages",
+            )
+            flash(f"Bericht naar {recipient['name']} verstuurd.", "success")
+        return redirect(url_for("messages"))
+    visible_ids = {me["id"]} | {
+        t["owner_id"] for t in get_visible_tools(me["id"])
+    }
+    contacts = [
+        f
+        for f in get_friends()
+        if f["id"] in visible_ids and f["id"] != me["id"]
+    ]
+    if me["is_admin"]:
+        contacts = [f for f in get_friends() if f["id"] != me["id"]]
+    return render_template(
+        "messages.html",
+        inbox=get_inbox(me["id"]),
+        sent=get_sent_messages(me["id"]),
+        contacts=contacts,
+    )
+
+
+@app.route("/messages/<int:message_id>/read", methods=["POST"])
+@login_required
+def message_read(message_id):
+    mark_message_read(message_id, g.friend["id"])
+    return redirect(url_for("messages"))
+
+
+@app.route("/circles/<int:circle_id>/tools")
+@login_required
+def circle_tools(circle_id):
+    me = g.friend
+    circle = get_circle(circle_id)
+    if not circle:
+        flash("Kring niet gevonden.", "error")
+        return redirect(url_for("circles"))
+    member_ids = {m["friend_id"] for m in get_circle_members(circle_id)}
+    if not (me["is_admin"] or me["id"] in member_ids):
+        flash("Je bent geen lid van deze kring.", "error")
+        return redirect(url_for("circles"))
+    tools_list = [t for t in get_tools() if t["owner_id"] in member_ids]
+    return render_template(
+        "circle_tools.html",
+        circle=circle,
+        tools_list=tools_list,
+        links=get_linked_tools_map([t["id"] for t in tools_list]),
     )
 
 
@@ -559,6 +718,19 @@ def tools():
         return redirect(url_for("tools"))
     me = g.friend
     tools_list = get_tools() if me["is_admin"] else get_visible_tools(me["id"])
+    search = request.args.get("q", "").strip().lower()
+    category_filter = request.args.get("category", "").strip()
+    if search:
+        tools_list = [
+            t
+            for t in tools_list
+            if search in (t["name"] or "").lower()
+            or search in (t["brand"] or "").lower()
+            or search in (t["model"] or "").lower()
+            or search in (t["description"] or "").lower()
+        ]
+    if category_filter:
+        tools_list = [t for t in tools_list if t["category"] == category_filter]
     view = request.args.get("view") or session.get("tools_view", "cards")
     if view not in ("cards", "list"):
         view = "cards"
@@ -586,6 +758,8 @@ def tools():
         direction=direction,
         categories=get_distinct_values("category"),
         brands=get_distinct_values("brand"),
+        search=search,
+        category_filter=category_filter,
     )
 
 
@@ -825,7 +999,20 @@ def loans():
             else:
                 tool = get_tool(tool_id)
                 visible = get_visible_tools(friend["id"])
-                if tool and tool["owner_id"] == friend["id"]:
+                note = request.form.get("note", "").strip()
+                date_from = request.form.get("date_from", "").strip()
+                date_until = request.form.get("date_until", "").strip()
+                if not date_from or not date_until:
+                    flash(
+                        "Geef een vanaf- en tot-datum op voor het leenverzoek.",
+                        "error",
+                    )
+                elif date_until < date_from:
+                    flash(
+                        "De tot-datum mag niet voor de vanaf-datum liggen.",
+                        "error",
+                    )
+                elif tool and tool["owner_id"] == friend["id"]:
                     flash("Je kunt niet je eigen gereedschap lenen.", "error")
                 elif tool and not any(
                     t["id"] == tool_id for t in visible
@@ -835,8 +1022,19 @@ def loans():
                         "vriendenkringen.",
                         "error",
                     )
-                elif create_loan_request(tool_id, friend["id"]):
+                elif create_loan_request(
+                    tool_id, friend["id"], note or None, date_from, date_until
+                ):
                     flash("Leenverzoek aangemaakt.", "success")
+                    owner = get_friend(tool["owner_id"])
+                    create_notification(
+                        owner["id"],
+                        "leenverzoek",
+                        f"{friend['name']} wil '{tool['name']}' lenen van "
+                        f"{date_from} tot {date_until}.",
+                        f"/tools/{tool_id}",
+                        tool_id,
+                    )
                     suggestions = get_combi_suggestions(friend["id"])
                     relevant = [s for s in suggestions if s["primary_tool_id"] == tool_id]
                     if relevant:
@@ -865,6 +1063,36 @@ def loans():
                     }[action],
                     "success",
                 )
+                loan = get_loan(loan_id)
+                if loan:
+                    borrower = get_friend(loan["borrower_id"])
+                    tool = get_tool(loan["tool_id"])
+                    if action == "approve":
+                        create_notification(
+                            loan["borrower_id"],
+                            "goedgekeurd",
+                            f"Je leenverzoek voor '{tool['name']}' is "
+                            "goedgekeurd.",
+                            f"/tools/{loan['tool_id']}",
+                            loan_id,
+                        )
+                    elif action == "reject":
+                        create_notification(
+                            loan["borrower_id"],
+                            "geweigerd",
+                            f"Je leenverzoek voor '{tool['name']}' is geweigerd.",
+                            f"/tools/{loan['tool_id']}",
+                            loan_id,
+                        )
+                    elif action == "return":
+                        create_notification(
+                            loan["borrower_id"],
+                            "teruggekeerd",
+                            f"'{tool['name']}' is als teruggekeerd "
+                            "geregistreerd.",
+                            f"/tools/{loan['tool_id']}",
+                            loan_id,
+                        )
             else:
                 flash("Actie niet mogelijk.", "error")
             return redirect(url_for("loans"))

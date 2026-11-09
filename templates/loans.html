@@ -5,7 +5,7 @@
     <h2>Leenverzoek aanmaken</h2>
     <form method="post">
         <input type="hidden" name="action" value="request">
-                <label>Gereedschap*
+        <label>Gereedschap*
             <select name="tool_id" required>
                 <option value="">— kies gereedschap —</option>
                 {% for tool in available_tools %}
@@ -13,6 +13,9 @@
                 {% endfor %}
             </select>
         </label>
+        <label>Vanaf* <input type="date" name="date_from" required></label>
+        <label>Tot* <input type="date" name="date_until" required></label>
+        <label>Notitie <input type="text" name="note" placeholder="bv. waarvoor je het gebruikt"></label>
         <button type="submit">Verzoek aanmaken</button>
     </form>
 </section>
@@ -130,6 +133,8 @@
                 <th><a href="{{ url_for('loans', status=status_filter, circle_filter=circle_filter or '', sort='status', dir='asc' if sort == 'status' and direction == 'desc' else 'desc') }}">Status {{ '▲' if sort == 'status' and direction == 'asc' else ('▼' if sort == 'status' else '') }}</a></th>
                 <th><a href="{{ url_for('loans', status=status_filter, circle_filter=circle_filter or '', sort='lent_at', dir='asc' if sort == 'lent_at' and direction == 'desc' else 'desc') }}">Uitgeleend op {{ '▲' if sort == 'lent_at' and direction == 'asc' else ('▼' if sort == 'lent_at' else '') }}</a></th>
                 <th><a href="{{ url_for('loans', status=status_filter, circle_filter=circle_filter or '', sort='returned_at', dir='asc' if sort == 'returned_at' and direction == 'desc' else 'desc') }}">Terug op {{ '▲' if sort == 'returned_at' and direction == 'asc' else ('▼' if sort == 'returned_at' else '') }}</a></th>
+                <th>Periode</th>
+                <th>Notitie</th>
             </tr>
         </thead>
         <tbody>
@@ -141,6 +146,8 @@
                 <td><span class="status {{ loan.status }}">{{ STATUS_LABELS[loan.status] }}</span></td>
                 <td>{{ loan.lent_at or "-" }}</td>
                 <td>{{ loan.returned_at or "-" }}</td>
+                <td>{% if loan.date_from %}{{ loan.date_from }}{% if loan.date_until %} t/m {{ loan.date_until }}{% endif %}{% else %}-{% endif %}</td>
+                <td>{{ loan.note or "-" }}</td>
             </tr>
             {% endfor %}
         </tbody>

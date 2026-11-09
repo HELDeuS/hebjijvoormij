@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}hebjijvoormij{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
     <script>
         (function () {
             var stored = localStorage.getItem("theme");
@@ -23,12 +24,16 @@
         <a href="{{ url_for('friends') }}">Vrienden</a>
         <a href="{{ url_for('circles') }}">Kringen</a>
         <a href="{{ url_for('stats') }}">Statistieken</a>
+        <a href="{{ url_for('messages') }}">Berichten</a>
         <a href="{{ url_for('tools') }}">Gereedschap</a>
         {% if friend.is_admin %}
         <a href="{{ url_for('loans') }}">Uitleningen</a>
         {% endif %}
     </nav>
     <div class="user-bar">
+        <a href="{{ url_for('notifications') }}" class="bell-link" title="Meldingen">
+            🔔{% if unread_notifications %}<span class="bell-count">{{ unread_notifications }}</span>{% endif %}
+        </a>
         <button type="button" id="theme-toggle" class="theme-toggle" title="Donker/licht thema wisselen">🌙</button>
         <a href="{{ url_for('profile') }}" class="profile-link" title="Naar mijn profiel">👋 {{ friend.name }}</a>
         <form method="post" action="{{ url_for('logout') }}" class="inline">

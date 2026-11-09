@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS loans (
     tool_id INT NOT NULL,
     borrower_id INT NOT NULL,
     status ENUM('aangevraagd', 'uitgeleend', 'teruggekeerd', 'geweigerd') NOT NULL DEFAULT 'aangevraagd',
+    note TEXT,
+    date_from DATE,
+    date_until DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     lent_at DATE,
     returned_at DATE,
@@ -68,4 +71,27 @@ CREATE TABLE IF NOT EXISTS circle_members (
     UNIQUE KEY uq_circle_member (circle_id, friend_id),
     FOREIGN KEY (circle_id) REFERENCES circles(id) ON DELETE CASCADE,
     FOREIGN KEY (friend_id) REFERENCES friends(id)
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    friend_id INT NOT NULL,
+    type VARCHAR(30) NOT NULL,
+    message TEXT NOT NULL,
+    link VARCHAR(255),
+    ref_id INT,
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (friend_id) REFERENCES friends(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_id INT NOT NULL,
+    recipient_id INT NOT NULL,
+    body TEXT NOT NULL,
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_id) REFERENCES friends(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipient_id) REFERENCES friends(id) ON DELETE CASCADE
 );
