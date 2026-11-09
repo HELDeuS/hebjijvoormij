@@ -19,8 +19,8 @@
         <label>Soort gereedschap* <input type="text" name="name" placeholder="bijv. accuboormachine" required></label>
         <label>Omschrijving <input type="text" name="description"></label>
         <label>Categorie <input type="text" name="category" list="categories" placeholder="bv. elektra, tuin, klussen"></label>
-        <label>Merk <input type="text" name="brand" list="brands" placeholder="bv. Bosch"></label>
-        <label>Type <input type="text" name="model" placeholder="bv. PSB 1800 LI-2"></label>
+        <label>Merk* <input type="text" name="brand" list="brands" placeholder="bv. Bosch" required></label>
+        <label>Type* <input type="text" name="model" placeholder="bv. PSB 1800 LI-2" required></label>
         <datalist id="categories">
             {% for c in categories %}<option value="{{ c }}"></option>{% endfor %}
         </datalist>
@@ -29,7 +29,7 @@
         </datalist>
         <button type="submit">Registreren</button>
     </form>
-    <p class="hint">Bij het invullen van merk en type wordt automatisch een plaatje opgezocht.</p>
+    <p class="hint">Na registratie wordt automatisch een plaatje gezocht op basis van merk en type.</p>
 </section>
 
 <section>

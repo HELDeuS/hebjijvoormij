@@ -18,8 +18,8 @@
         <label>Soort gereedschap* <input type="text" name="name" value="{{ tool.name }}" placeholder="bijv. accuboormachine" required></label>
         <label>Omschrijving <input type="text" name="description" value="{{ tool.description or '' }}"></label>
         <label>Categorie <input type="text" name="category" list="categories" value="{{ tool.category or '' }}" placeholder="bv. elektra, tuin, klussen"></label>
-        <label>Merk <input type="text" name="brand" list="brands" value="{{ tool.brand or '' }}" placeholder="bv. Bosch"></label>
-        <label>Type <input type="text" name="model" value="{{ tool.model or '' }}" placeholder="bv. PSB 1800 LI-2"></label>
+        <label>Merk* <input type="text" name="brand" list="brands" value="{{ tool.brand or '' }}" placeholder="bv. Bosch" required></label>
+        <label>Type* <input type="text" name="model" value="{{ tool.model or '' }}" placeholder="bv. PSB 1800 LI-2" required></label>
         <datalist id="categories">
             {% for c in categories %}<option value="{{ c }}"></option>{% endfor %}
         </datalist>

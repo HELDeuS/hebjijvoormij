@@ -16,14 +16,7 @@ HEADERS = {
 }
 
 
-def search_image(query):
-    """Zoekt een afbeelding via DuckDuckGo Afbeeldingen.
-
-    Geeft de URL van de beste (voldoend grote) afbeelding terug,
-    of None als er niets bruikbaars gevonden is.
-    """
-    session = requests.Session()
-    session.headers.update(HEADERS)
+def _search_duckduckgo(session, query):
     try:
         landing = session.post(
             "https://duckduckgo.com/", data={"q": query}, timeout=SEARCH_TIMEOUT
@@ -51,13 +44,40 @@ def search_image(query):
         results = response.json().get("results", [])
     except (requests.RequestException, ValueError):
         return None
-
     for result in results:
         url = result.get("image", "")
         width, height = result.get("width") or 0, result.get("height") or 0
         if url.startswith("http") and width >= 200 and height >= 200:
             return url
     return None
+
+
+def _search_bing(session, query):
+    try:
+        response = session.get(
+            "https://www.bing.com/images/search",
+            params={"q": query, "form": "HDRSC2", "first": "1"},
+            timeout=SEARCH_TIMEOUT,
+        )
+    except requests.RequestException:
+        return None
+    urls = re.findall(r'murl&quot;:&quot;(.*?)&quot;', response.text)
+    for url in urls:
+        if url.startswith("http") and any(
+            url.lower().split("?")[0].endswith(ext)
+            for ext in (".jpg", ".jpeg", ".png", ".webp")
+        ):
+            return url
+    return urls[0] if urls else None
+
+
+def search_image(query):
+    """Zoekt een afbeelding via DuckDuckGo Afbeeldingen en valt terug op
+    Bing Afbeeldingen. Geeft de URL van de beste (voldoend grote)
+    afbeelding terug, of None als er niets bruikbaars gevonden is."""
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    return _search_duckduckgo(session, query) or _search_bing(session, query)
 
 
 def download_image(image_url, tool_id):

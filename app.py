@@ -544,25 +544,30 @@ def tools():
         category = request.form.get("category", "").strip()
         brand = request.form.get("brand", "").strip()
         model = request.form.get("model", "").strip()
-        if not owner_id or not name:
-            flash("Eigenaar en naam zijn verplicht.", "error")
+        if not owner_id or not name or not brand or not model:
+            flash(
+                "Eigenaar, soort, merk en type zijn verplicht.",
+                "error",
+            )
             return redirect(url_for("tools"))
         tool_id = add_tool(owner_id, name, description, category, brand, model)
         if tool_id is None:
             flash("Dit gereedschap bestaat al.", "error")
         else:
             flash(f"Gereedschap '{name}' is geregistreerd.", "success")
-            if brand or model:
-                image_path = find_and_store_image(tool_id, name, brand, model)
-                if image_path:
-                    set_tool_image(tool_id, image_path)
-                    flash("Er is automatisch een plaatje opgezocht en toegevoegd.", "success")
-                else:
-                    flash(
-                        "Geen bruikbaar plaatje gevonden; je kunt het handmatig "
-                        "toevoegen via 'Plaatje zoeken' of een afbeeldings-URL.",
-                        "warning",
-                    )
+            image_path = find_and_store_image(tool_id, name, brand, model)
+            if image_path:
+                set_tool_image(tool_id, image_path)
+                flash(
+                    "Er is automatisch een plaatje opgezocht en toegevoegd.",
+                    "success",
+                )
+            else:
+                flash(
+                    "Er kon geen plaatje worden gevonden; gebruik 'Plaatje "
+                    "uploaden' op de kaart of probeer later 'Plaatje zoeken'.",
+                    "warning",
+                )
         return redirect(url_for("tools"))
     me = g.friend
     tools_list = get_tools() if me["is_admin"] else get_visible_tools(me["id"])
@@ -679,8 +684,11 @@ def tool_edit(tool_id):
         category = request.form.get("category", "").strip()
         brand = request.form.get("brand", "").strip()
         model = request.form.get("model", "").strip()
-        if not owner_id or not name:
-            flash("Eigenaar en soort gereedschap zijn verplicht.", "error")
+        if not owner_id or not name or not brand or not model:
+            flash(
+                "Eigenaar, soort, merk en type zijn verplicht.",
+                "error",
+            )
         elif update_tool(tool_id, owner_id, name, description, category, brand, model):
             flash(f"Gereedschap '{name}' is aangepast.", "success")
             return redirect(url_for("tools"))
