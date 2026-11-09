@@ -113,10 +113,20 @@ def login_required(view):
 
 
 _last_reminder_check = {"ts": 0.0}
+_schema_checked = {"done": False}
 
 
 @app.before_request
 def load_current_friend():
+    if not _schema_checked["done"]:
+        _schema_checked["done"] = True
+        try:
+            ensure_schema()
+            ensure_admin()
+        except Exception as exc:
+            app.logger.warning(
+                "Database-initialisatie bij eerste request mislukt: %s", exc
+            )
     friend_id = session.get("friend_id")
     friend = get_friend(friend_id) if friend_id else None
     if friend and friend.get("status") != "actief":
