@@ -34,6 +34,7 @@ from db.db import (
     get_scoped_loans,
     get_combi_suggestions,
     get_distinct_values,
+    get_active_loan,
     get_friend,
     get_friend_by_email,
     get_friends,
@@ -639,14 +640,15 @@ def tool_detail(tool_id):
         )
         return redirect(url_for("tools"))
     links = get_linked_tools_map([tool_id]).get(tool_id, [])
-    available = not tool["active_loan_id"]
+    active_loan = get_active_loan(tool_id)
     owner = get_friend(tool["owner_id"])
     return render_template(
         "tool_detail.html",
         tool=tool,
         owner=owner,
         links=links,
-        available=available,
+        available=active_loan is None,
+        active_loan=active_loan,
         is_own=tool["owner_id"] == me["id"],
         can_manage=_can_manage(tool),
     )

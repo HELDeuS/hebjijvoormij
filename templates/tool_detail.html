@@ -20,8 +20,8 @@
         {% if tool.description %}<p>{{ tool.description }}</p>{% endif %}
         {% if tool.category %}<p class="meta">Categorie: {{ tool.category }}</p>{% endif %}
         <p>
-            {% if tool.active_loan_id %}
-            <span class="status {{ tool.loan_status }}">{{ STATUS_LABELS[tool.loan_status] }}</span>
+            {% if active_loan %}
+            <span class="status {{ active_loan.status }}">{{ STATUS_LABELS[active_loan.status] }}</span>
             {% else %}
             <span class="status beschikbaar">Beschikbaar</span>
             {% endif %}

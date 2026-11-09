@@ -425,6 +425,18 @@ def update_tool(tool_id, owner_id, name, description, category, brand, model):
             return False
 
 
+def get_active_loan(tool_id):
+    """Geeft de openstaande lening of leenaanvraag van een gereedschap
+    terug, of None als het gereedschap beschikbaar is."""
+    with Database() as db:
+        rows = db._query(
+            "SELECT * FROM loans WHERE tool_id = %s "
+            "AND status IN ('aangevraagd', 'uitgeleend') LIMIT 1",
+            (tool_id,),
+        )
+        return rows[0] if rows else None
+
+
 def delete_tool(tool_id):
     """Verwijdert gereedschap inclusief koppelingen en leengeschiedenis.
     Geeft False terug zolang er openstaande leningen of verzoeken zijn."""
