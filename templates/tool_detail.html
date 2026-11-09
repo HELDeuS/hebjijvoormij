@@ -55,6 +55,18 @@
         <form method="post" action="{{ url_for('loans') }}">
             <input type="hidden" name="action" value="request">
             <input type="hidden" name="tool_id" value="{{ tool.id }}">
+            <label>Vanaf* <input type="date" name="date_from" required></label>
+            <label>Tot* <input type="date" name="date_until" required></label>
+            <label>Notitie <input type="text" name="note" placeholder="bv. waarvoor je het gebruikt"></label>
+            {% if combi_options %}
+            <p class="hint">Goed te combineren met — aangevinkte gereedschap krijgt hetzelfde datumbereik en dezelfde notitie:</p>
+            {% for option in combi_options %}
+            <label class="combi-option">
+                <input type="checkbox" name="combi_tool_ids" value="{{ option.id }}">
+                {{ option.name }} (van {{ option.owner_name }})
+            </label>
+            {% endfor %}
+            {% endif %}
             <button type="submit">Uitlening aanvragen</button>
         </form>
         {% else %}

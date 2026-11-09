@@ -918,6 +918,15 @@ def tool_detail(tool_id):
     active_loan = get_active_loan(tool_id)
     owner = get_friend(tool["owner_id"])
     loan = get_loan(active_loan["id"]) if active_loan else None
+    visible = get_tools() if me["is_admin"] else get_visible_tools(me["id"])
+    available_tools = [t for t in visible if not t["active_loan_id"]]
+    combi_options = []
+    for link in links:
+        linked = next(
+            (t for t in available_tools if t["id"] == link["linked_id"]), None
+        )
+        if linked:
+            combi_options.append(linked)
     return render_template(
         "tool_detail.html",
         tool=tool,
@@ -925,6 +934,7 @@ def tool_detail(tool_id):
         links=links,
         available=active_loan is None,
         active_loan=loan,
+        combi_options=combi_options,
         is_own=tool["owner_id"] == me["id"],
         can_manage=_can_manage(tool),
     )
