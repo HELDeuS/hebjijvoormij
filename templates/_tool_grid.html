@@ -35,6 +35,7 @@
                 {% if tool.date_from %}({{ tool.date_from | fmt_date }}{% if tool.date_until %} t/m {{ tool.date_until | fmt_date }}{% endif %}){% endif %}
             </p>
             {% endif %}
+            {% if friend and (friend.is_admin or tool.owner_id == friend.id) %}
             <div class="tool-actions">
                 <div class="manage-row">
                     <a href="{{ url_for('tool_edit', tool_id=tool.id) }}" class="button-link">Aanpassen</a>
@@ -60,6 +61,7 @@
                 </form>
                 {% endif %}
             </div>
+            {% endif %}
         </div>
     </article>
     {% endfor %}
