@@ -34,6 +34,9 @@
                     {% else %}
                     <span class="status beschikbaar">Beschikbaar</span>
                     {% endif %}
+                    {% if is_not_lendable(tool) %}
+                    <span class="status niet-uitleenbaar">Niet uitleenbaar</span>
+                    {% endif %}
                 </td>
                 <td>
                     {% if friend and (friend.is_admin or tool.owner_id == friend.id) %}

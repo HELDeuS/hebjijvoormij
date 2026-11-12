@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS tools (
     brand VARCHAR(100),
     model VARCHAR(100),
     image_path VARCHAR(255),
+    not_lendable TINYINT(1) NOT NULL DEFAULT 0,
+    not_lendable_reason VARCHAR(255),
+    not_lendable_from DATE,
+    not_lendable_until DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_owner_tool (owner_id, name),
     FOREIGN KEY (owner_id) REFERENCES friends(id)

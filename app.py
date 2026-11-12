@@ -2,6 +2,7 @@ import os
 import secrets
 import threading
 import time
+from datetime import date, datetime
 from functools import wraps
 
 from flask import (
@@ -109,6 +110,65 @@ STATUS_LABELS = {
 }
 
 app.jinja_env.globals.update(STATUS_LABELS=STATUS_LABELS)
+
+
+def _parse_date(value):
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_not_lendable(form):
+    """Leest de niet-uitleenbaar-velden uit een formulier. Geeft een
+    tuple (flag, reden, vanaf, t/m, foutmelding) terug."""
+    flag = 1 if form.get("not_lendable") else 0
+    reason = form.get("not_lendable_reason", "").strip() or None
+    date_from = form.get("not_lendable_from", "").strip() or None
+    date_until = form.get("not_lendable_until", "").strip() or None
+    if not flag:
+        return 0, None, None, None, None
+    if not date_from:
+        return 1, reason, None, None, "Geef een vanaf-datum op bij 'Niet uitleenbaar'."
+    parsed_from = _parse_date(date_from)
+    parsed_until = _parse_date(date_until) if date_until else None
+    if parsed_from is None or (date_until and parsed_until is None):
+        return 1, reason, None, None, "Ongeldige datum bij 'Niet uitleenbaar'."
+    if parsed_until and parsed_until < parsed_from:
+        return 1, reason, None, None, (
+            "De t/m-datum mag niet voor de vanaf-datum liggen."
+        )
+    return 1, reason, date_from, date_until, None
+
+
+def _is_not_lendable(tool):
+    """Is de niet-uitleenbaar-status actief (vandaag of in de toekomst)?"""
+    if not tool or not tool.get("not_lendable"):
+        return False
+    until = tool.get("not_lendable_until")
+    if until and str(until) < date.today().isoformat():
+        return False
+    return True
+
+
+def _blocks_period(tool, date_from, date_until):
+    """Valt de aangevraagde leenperiode binnen de niet-uitleenbare
+    periode van het gereedschap?"""
+    if not tool or not tool.get("not_lendable"):
+        return False
+    block_from = tool.get("not_lendable_from")
+    if not block_from:
+        return False
+    block_from = str(block_from)
+    block_until = str(tool["not_lendable_until"]) if tool.get("not_lendable_until") else None
+    if date_until < block_from:
+        return False
+    if block_until and date_from > block_until:
+        return False
+    return True
+
+
+app.jinja_env.globals.update(is_not_lendable=_is_not_lendable)
 
 DATE_FORMATS = {
     "dmy": "%d-%m-%Y",
@@ -934,7 +994,16 @@ def tools():
                 "error",
             )
             return redirect(url_for("tools"))
-        tool_id = add_tool(owner_id, name, description, category, brand, model)
+        not_lendable, nl_reason, nl_from, nl_until, nl_error = (
+            _parse_not_lendable(request.form)
+        )
+        if nl_error:
+            flash(nl_error, "error")
+            return redirect(url_for("tools"))
+        tool_id = add_tool(
+            owner_id, name, description, category, brand, model,
+            not_lendable, nl_reason, nl_from, nl_until,
+        )
         if tool_id is None:
             flash("Dit gereedschap bestaat al.", "error")
         else:
@@ -1104,22 +1173,49 @@ def tool_edit(tool_id):
                 "Eigenaar, soort, merk en type zijn verplicht.",
                 "error",
             )
-        elif update_tool(tool_id, owner_id, name, description, category, brand, model):
-            flash(f"Gereedschap '{name}' is aangepast.", "success")
-            return redirect(url_for("tools"))
         else:
-            flash(
-                "Deze combinatie van eigenaar en soort gereedschap bestaat al.",
-                "error",
+            not_lendable, nl_reason, nl_from, nl_until, nl_error = (
+                _parse_not_lendable(request.form)
             )
-        tool.update(
-            owner_id=owner_id or tool["owner_id"],
-            name=name or tool["name"],
-            description=description,
-            category=category,
-            brand=brand,
-            model=model,
-        )
+            if nl_error:
+                flash(nl_error, "error")
+                tool.update(
+                    owner_id=owner_id or tool["owner_id"],
+                    name=name or tool["name"],
+                    description=description,
+                    category=category,
+                    brand=brand,
+                    model=model,
+                )
+                return render_template(
+                    "tool_edit.html",
+                    tool=tool,
+                    categories=get_distinct_values("category"),
+                    brands=get_distinct_values("brand"),
+                )
+            elif update_tool(
+                tool_id, owner_id, name, description, category, brand, model,
+                not_lendable, nl_reason, nl_from, nl_until,
+            ):
+                flash(f"Gereedschap '{name}' is aangepast.", "success")
+                return redirect(url_for("tools"))
+            else:
+                flash(
+                    "Deze combinatie van eigenaar en soort gereedschap bestaat al.",
+                    "error",
+                )
+            tool.update(
+                owner_id=owner_id or tool["owner_id"],
+                name=name or tool["name"],
+                description=description,
+                category=category,
+                brand=brand,
+                model=model,
+                not_lendable=not_lendable,
+                not_lendable_reason=nl_reason,
+                not_lendable_from=nl_from,
+                not_lendable_until=nl_until,
+            )
     return render_template(
         "tool_edit.html",
         tool=tool,
@@ -1274,6 +1370,17 @@ def loans():
                         "vriendenkringen.",
                         "error",
                     )
+                elif tool and _blocks_period(tool, date_from, date_until):
+                    reason = tool.get("not_lendable_reason")
+                    until = tool.get("not_lendable_until")
+                    flash(
+                        f"'{tool['name']}' is niet uitleenbaar van "
+                        f"{tool['not_lendable_from']}"
+                        + (f" t/m {until}" if until else "")
+                        + (f" ({reason})" if reason else "")
+                        + ". Kies een periode buiten dit datumbereik.",
+                        "error",
+                    )
                 elif create_loan_request(
                     tool_id, friend["id"], note or None, date_from, date_until
                 ):
@@ -1295,6 +1402,17 @@ def loans():
                         if not combi_tool or combi_tool["owner_id"] == friend["id"]:
                             continue
                         if not any(t["id"] == combi_tool["id"] for t in visible):
+                            continue
+                        if _blocks_period(combi_tool, date_from, date_until):
+                            combi_until = combi_tool.get("not_lendable_until")
+                            flash(
+                                f"Combi-gereedschap '{combi_tool['name']}' is "
+                                f"niet uitleenbaar van "
+                                f"{combi_tool['not_lendable_from']}"
+                                + (f" t/m {combi_until}" if combi_until else "")
+                                + "; het is niet aangevraagd.",
+                                "warning",
+                            )
                             continue
                         if create_loan_request(
                             int(combi_id),

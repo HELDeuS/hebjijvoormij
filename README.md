@@ -42,6 +42,12 @@ meldingen en berichten.
 - Beheerknoppen (aanpassen, verwijderen, plaatje) zijn alleen
   zichtbaar voor de eigenaar en de beheerder; verwijderen is
   geblokkeerd zolang gereedschap is uitgeleend of aangevraagd.
+- **Niet uitleenbaar**: markeer gereedschap met een optionele reden
+  (bv. "in reparatie", "zelf in gebruik"), een vanaf-datum en een
+  optionele einddatum. Binnen dat datumbereik kan het niet aangevraagd
+  worden (hoofd- noch combi-gereedschap); buiten het bereik kan het
+  gewoon aangevraagd worden. Kaarten, lijsten en de detailpagina
+  tonen de status met reden en periode.
 - **Combi-gereedschap**: koppel bijbehorend gereedschap (bv. boren
   bij een boormachine); bij een leenverzoek zijn combi-tools
   direct aanvinkbaar en krijgen ze hetzelfde datumbereik en dezelfde

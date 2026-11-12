@@ -28,7 +28,13 @@
                 {% else %}
                 <span class="status beschikbaar">Beschikbaar</span>
                 {% endif %}
+                {% if is_not_lendable(tool) %}
+                <span class="status niet-uitleenbaar">Niet uitleenbaar{% if tool.not_lendable_reason %} ({{ tool.not_lendable_reason }}){% endif %}</span>
+                {% endif %}
             </p>
+            {% if is_not_lendable(tool) and tool.not_lendable_from %}
+            <p class="meta">Niet uitleenbaar van {{ tool.not_lendable_from | fmt_date }}{% if tool.not_lendable_until %} t/m {{ tool.not_lendable_until | fmt_date }}{% endif %}</p>
+            {% endif %}
             {% if friend and tool.owner_id == friend.id and tool.loan_id and tool.borrower_name %}
             <p class="meta">
                 Uitgeleend aan <strong>{{ tool.borrower_name }}</strong>

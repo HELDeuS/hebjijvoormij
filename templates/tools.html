@@ -22,6 +22,11 @@
         <label>Categorie <input type="text" name="category" list="categories" placeholder="bv. elektra, tuin, klussen"></label>
         <label>Merk* <input type="text" name="brand" list="brands" placeholder="bv. Bosch" required></label>
         <label>Type* <input type="text" name="model" placeholder="bv. PSB 1800 LI-2" required></label>
+        <label><input type="checkbox" name="not_lendable" value="1"> Niet uitleenbaar</label>
+        <label>Reden <input type="text" name="not_lendable_reason" placeholder="bv. in reparatie, zelf in gebruik"></label>
+        <label>Niet uitleenbaar vanaf <input type="date" name="not_lendable_from"></label>
+        <label>Niet uitleenbaar t/m <input type="date" name="not_lendable_until"></label>
+        <p class="hint">Binnen het datumbereik kan het gereedschap niet aangevraagd worden; laat de t/m-datum leeg voor een periode zonder einddatum.</p>
         <datalist id="categories">
             {% for c in categories %}<option value="{{ c }}"></option>{% endfor %}
         </datalist>

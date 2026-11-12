@@ -108,6 +108,14 @@ def _migrate(cur):
         "brand": "ALTER TABLE tools ADD COLUMN brand VARCHAR(100)",
         "model": "ALTER TABLE tools ADD COLUMN model VARCHAR(100)",
         "image_path": "ALTER TABLE tools ADD COLUMN image_path VARCHAR(255)",
+        "not_lendable": (
+            "ALTER TABLE tools ADD COLUMN not_lendable TINYINT(1) NOT NULL DEFAULT 0"
+        ),
+        "not_lendable_reason": (
+            "ALTER TABLE tools ADD COLUMN not_lendable_reason VARCHAR(255)"
+        ),
+        "not_lendable_from": "ALTER TABLE tools ADD COLUMN not_lendable_from DATE",
+        "not_lendable_until": "ALTER TABLE tools ADD COLUMN not_lendable_until DATE",
         "password_hash": (
             "ALTER TABLE friends ADD COLUMN password_hash VARCHAR(255)"
         ),
@@ -185,6 +193,14 @@ def ensure_schema():
             "brand": "ALTER TABLE tools ADD COLUMN brand VARCHAR(100)",
             "model": "ALTER TABLE tools ADD COLUMN model VARCHAR(100)",
             "image_path": "ALTER TABLE tools ADD COLUMN image_path VARCHAR(255)",
+            "not_lendable": (
+                "ALTER TABLE tools ADD COLUMN not_lendable TINYINT(1) NOT NULL DEFAULT 0"
+            ),
+            "not_lendable_reason": (
+                "ALTER TABLE tools ADD COLUMN not_lendable_reason VARCHAR(255)"
+            ),
+            "not_lendable_from": "ALTER TABLE tools ADD COLUMN not_lendable_from DATE",
+            "not_lendable_until": "ALTER TABLE tools ADD COLUMN not_lendable_until DATE",
         }
         loan_columns = {
             row["COLUMN_NAME"]
@@ -433,13 +449,18 @@ def ensure_admin():
             pass
 
 
-def add_tool(owner_id, name, description, category, brand=None, model=None):
+def add_tool(owner_id, name, description, category, brand=None, model=None,
+            not_lendable=0, not_lendable_reason=None,
+            not_lendable_from=None, not_lendable_until=None):
     with Database() as db:
         try:
             db._execute(
-                "INSERT INTO tools (owner_id, name, description, category, brand, model) "
-                "VALUES (%s, %s, %s, %s, %s, %s)",
-                (owner_id, name, description, category, brand, model),
+                "INSERT INTO tools (owner_id, name, description, category, brand, model, "
+                "not_lendable, not_lendable_reason, not_lendable_from, not_lendable_until) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                (owner_id, name, description, category, brand, model,
+                 not_lendable, not_lendable_reason,
+                 not_lendable_from, not_lendable_until),
             )
             return db._query("SELECT LAST_INSERT_ID() AS id")[0]["id"]
         except mysql.connector.errors.IntegrityError:
@@ -465,13 +486,19 @@ def get_tools(owner_id=None, available_only=False):
         return db.get_tools(owner_id=owner_id, available_only=available_only)
 
 
-def update_tool(tool_id, owner_id, name, description, category, brand, model):
+def update_tool(tool_id, owner_id, name, description, category, brand, model,
+                not_lendable=0, not_lendable_reason=None,
+                not_lendable_from=None, not_lendable_until=None):
     with Database() as db:
         try:
             db._execute(
                 "UPDATE tools SET owner_id = %s, name = %s, description = %s, "
-                "category = %s, brand = %s, model = %s WHERE id = %s",
-                (owner_id, name, description, category, brand, model, tool_id),
+                "category = %s, brand = %s, model = %s, "
+                "not_lendable = %s, not_lendable_reason = %s, "
+                "not_lendable_from = %s, not_lendable_until = %s WHERE id = %s",
+                (owner_id, name, description, category, brand, model,
+                 not_lendable, not_lendable_reason,
+                 not_lendable_from, not_lendable_until, tool_id),
             )
             return True
         except mysql.connector.errors.IntegrityError:

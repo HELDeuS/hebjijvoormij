@@ -98,6 +98,7 @@ th { color: var(--muted); font-size: .8rem; text-transform: uppercase; }
 .status.uitgeleend { background: #dbe7f5; color: #236; }
 .status.teruggekeerd { background: #eee; color: var(--muted); }
 .status.geweigerd { background: #f7dede; color: var(--danger); }
+.status.niet-uitleenbaar { background: #efe3f3; color: #6b3fa0; }
 
 .flash {
     max-width: 960px;
@@ -232,6 +233,7 @@ html.dark .status.aangevraagd { background: #3a3222; color: #e8c98a; }
 html.dark .status.uitgeleend { background: #22303f; color: #a3c4f0; }
 html.dark .status.teruggekeerd { background: #2b3236; color: #b9c2c0; }
 html.dark .status.geweigerd { background: #3a2226; color: #f0a3a3; }
+html.dark .status.niet-uitleenbaar { background: #32253f; color: #c9a8ec; }
 html.dark .view-toggle .toggle { background: transparent; color: var(--muted); }
 html.dark .view-toggle .toggle.active { background: var(--primary); color: #fff; }
 html.dark .link-remove { color: var(--danger); }
