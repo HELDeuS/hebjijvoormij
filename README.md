@@ -172,10 +172,16 @@ sudo mysql_secure_installation
 
 ### 2. App-code ophalen
 
-Maak een eigen systeemgebruiker en zet de code in `/opt/hebjijvoormij/app`:
+Maak een eigen systeemgebruiker en zet de code in `/opt/hebjijvoormij/app`.
+Let op: `adduser --home` maakt de map niet (meer) aan en chownt
+daar bestaande mappen niet, dus die moet je zelf met de juiste
+eigenaar aanmaken — anders faalt de `git clone` als
+`hebjijvoormij` met een rechtenfout en vallen latere stappen terug
+op je eigen thuismap:
 
 ```bash
 sudo adduser --system --group --home /opt/hebjijvoormij hebjijvoormij
+sudo install -d -o hebjijvoormij -g hebjijvoormij /opt/hebjijvoormij
 sudo -u hebjijvoormij git clone https://github.com/HELDeuS/hebjijvoormij.git /opt/hebjijvoormij/app
 ```
 
