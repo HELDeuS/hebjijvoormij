@@ -226,6 +226,10 @@ def load_current_friend():
         session.clear()
         friend = None
     g.friend = friend
+    if friend and (
+        friend.get("must_change_password") or friend.get("password_hash") is None
+    ) and request.endpoint not in ("first_password", "logout", "static"):
+        return redirect(url_for("first_password"))
     if friend and time.time() - _last_reminder_check["ts"] > 3600:
         _last_reminder_check["ts"] = time.time()
         _run_reminder_check()
@@ -316,7 +320,6 @@ def login():
     if request.method == "POST":
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
-        new_password = request.form.get("new_password", "")
         if _login_blocked(email):
             flash(
                 "Te veel mislukte inlogpogingen; probeer het over een "
@@ -342,39 +345,58 @@ def login():
                 "error",
             )
         elif friend["password_hash"] is None:
-            set_friend_password(friend["id"], generate_password_hash(password))
             session["friend_id"] = friend["id"]
             _clear_login_failures(email)
             flash(
-                f"Welkom {friend['name']}! Je wachtwoord is ingesteld; "
-                "gebruik het voortaan om in te loggen.",
-                "success",
+                f"Welkom {friend['name']}! Kies een wachtwoord voor je account.",
+                "warning",
             )
-            return redirect(url_for("index"))
+            return redirect(url_for("first_password"))
         elif not check_password_hash(friend["password_hash"], password):
             _register_login_failure(email)
             flash("Onjuist e-mailadres of wachtwoord.", "error")
         elif friend["must_change_password"]:
-            if len(new_password) < 6:
-                flash(
-                    "Dit is je eerste login: kies een nieuw wachtwoord van "
-                    "minstens 6 tekens.",
-                    "warning",
-                )
-                return render_template("login.html", show_change=True, email=email)
-            set_friend_password(friend["id"], generate_password_hash(new_password))
             session["friend_id"] = friend["id"]
             _clear_login_failures(email)
             flash(
-                f"Welkom {friend['name']}! Je wachtwoord is gewijzigd.", "success"
+                f"Welkom {friend['name']}! Je logt voor het eerst in: kies "
+                "een eigen wachtwoord.",
+                "warning",
             )
-            return redirect(url_for("index"))
+            return redirect(url_for("first_password"))
         else:
             session["friend_id"] = friend["id"]
             _clear_login_failures(email)
             flash(f"Welkom terug, {friend['name']}!", "success")
             return redirect(url_for("index"))
     return render_template("login.html")
+
+
+@app.route("/first_password", methods=["GET", "POST"])
+def first_password():
+    friend = g.friend
+    if not friend:
+        return redirect(url_for("login"))
+    if friend["password_hash"] is not None and not friend["must_change_password"]:
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+        if len(new_password) < 6:
+            flash(
+                "Kies een nieuw wachtwoord van minstens 6 tekens.", "warning"
+            )
+        elif new_password != confirm_password:
+            flash(
+                "De twee ingevoerde wachtwoorden zijn niet gelijk.", "warning"
+            )
+        else:
+            set_friend_password(friend["id"], generate_password_hash(new_password))
+            flash(
+                f"Welkom {friend['name']}! Je wachtwoord is ingesteld.", "success"
+            )
+            return redirect(url_for("index"))
+    return render_template("first_password.html")
 
 
 @app.route("/logout", methods=["POST"])

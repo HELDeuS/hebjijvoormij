@@ -7,10 +7,6 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label>E-mail <input type="email" name="email" value="{{ email or '' }}" required autofocus></label>
         <label>Wachtwoord <input type="password" name="password" required></label>
-        {% if show_change %}
-        <label>Nieuw wachtwoord <input type="password" name="new_password" minlength="6" required></label>
-        <p class="hint">Je logt voor het eerst in: kies hierboven je eigen nieuwe wachtwoord (min. 6 tekens).</p>
-        {% endif %}
         <button type="submit">Inloggen</button>
     </form>
     <p class="hint">Nog geen account? <a href="{{ url_for('register') }}">Registreer jezelf</a> - de beheerder keurt het goed.</p>
