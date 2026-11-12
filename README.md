@@ -316,7 +316,7 @@ rechtstreeks op het netwerk bereikbaar maken (zonder nginx), zet dan
 (bij voorkeur alleen voor vertrouwde netwerken):
 
 ```bash
-sudo ufw allow from 192.168.1.0/24 to any port 5000 tcp
+sudo ufw allow from 192.168.1.0/24 to any port 5000 proto tcp
 ```
 
 Zet `FLASK_DEBUG` nooit op 1 als de app buiten localhost bereikbaar is.
