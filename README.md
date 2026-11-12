@@ -224,10 +224,12 @@ EXIT;
 
 Maak een omgevingsbestand `/opt/hebjijvoormij/app/.env` (niet in git);
 zie `.env.example` voor alle variabelen. Genereer een veilige
-`SECRET_KEY` met `openssl rand -hex 32`.
+`SECRET_KEY` met `openssl rand -hex 32`. Schrijf het bestand met
+`sudo tee` — de app-map is van de gebruiker `hebjijvoormij`, dus een
+gewone omleiding (`cat > ...`) faalt met "Permission denied":
 
 ```bash
-cat > /opt/hebjijvoormij/app/.env <<'ENV'
+sudo tee /opt/hebjijvoormij/app/.env > /dev/null <<'ENV'
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_USER=gereedschap
