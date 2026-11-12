@@ -164,6 +164,10 @@ sudo apt update
 sudo apt install -y python3 python3-venv python3-pip git mariadb-server nginx
 ```
 
+`nginx` is alleen nodig als je de app via een lokale nginx met HTTPS
+wilt ontsluiten (stap 7); draait je reverse-proxy op een aparte
+server, dan kun je het weglaten.
+
 Beveilig MariaDB (root-wachtwoord instellen, anonieme gebruikers weg):
 
 ```bash
@@ -302,7 +306,7 @@ User=hebjijvoormij
 Group=hebjijvoormij
 WorkingDirectory=/opt/hebjijvoormij/app
 EnvironmentFile=/opt/hebjijvoormij/app/.env
-ExecStart=/opt/hebjijvoormij/app/venv/bin/gunicorn --workers 5 --bind 127.0.0.1:5000 app:app
+ExecStart=/opt/hebjijvoormij/app/venv/bin/gunicorn --workers 5 --bind 0.0.0.0:5000 app:app
 Restart=on-failure
 RestartSec=5
 
@@ -310,14 +314,20 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-De app luistert standaard alleen op `127.0.0.1`. Wil je de app
-rechtstreeks op het netwerk bereikbaar maken (zonder nginx), zet dan
-`FLASK_HOST=0.0.0.0` in de `.env` en open poort 5000 in de firewall
-(bij voorkeur alleen voor vertrouwde netwerken):
+De app luistert hiermee op alle netwerkinterfaces (`0.0.0.0`) en is
+rechtstreeks bereikbaar op `http://<server-ip>:5000`, zonder nginx op
+deze server. Beveilig poort 5000 in de firewall en sta het verkeer
+alleen toe vanaf vertrouwde bronnen — draait je nginx-reverse-proxy op
+een aparte server, open de poort dan alléén voor het IP van die
+proxy-server (vervang `192.168.1.10` door het proxy-IP):
 
 ```bash
-sudo ufw allow from 192.168.1.0/24 to any port 5000 proto tcp
+sudo ufw allow from 192.168.1.10 to any port 5000 proto tcp
 ```
+
+Wil je de app liever alleen via de lokale nginx benaderen (stap 7),
+dan bind je gunicorn terug op localhost:
+`--bind 127.0.0.1:5000`.
 
 Zet `FLASK_DEBUG` nooit op 1 als de app buiten localhost bereikbaar is.
 
@@ -335,10 +345,35 @@ Logbestanden bekijken:
 journalctl -u hebjijvoormij -f
 ```
 
-### 7. Bereikbaar maken via nginx met HTTPS
+### 7. Bereikbaar maken via nginx met HTTPS (optioneel)
 
-Maak de site-configuratie (pas `gereedschap.voorbeeld.nl` aan naar je
-eigen domein):
+Deze stap is alleen nodig als je nginx op déze server draait. Draait
+er al een nginx-reverse-proxy op een aparte server in je netwerk,
+dan sla je deze stap over en gebruik je onderstaande configuratie op
+die proxy-server (vervang `192.168.1.20` door het IP van de app-server
+en `gereedschap.voorbeeld.nl` door je eigen domein):
+
+```nginx
+server {
+    listen 80;
+    server_name gereedschap.voorbeeld.nl;
+
+    location / {
+        proxy_pass http://192.168.1.20:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+De statische bestanden (CSS, plaatjes) worden in dit scenario gewoon
+door de app zelf geserveerd; dat is voor kleine kringen prima
+voldoende. Voeg daarna op de proxy-server HTTPS toe met certbot
+(zie het certbot-commando onderaan deze stap).
+
+Draait nginx wél op deze server, maak dan de site-configuratie aan
+(pas `gereedschap.voorbeeld.nl` aan naar je eigen domein):
 
 ```bash
 sudo tee /etc/nginx/sites-available/hebjijvoormij > /dev/null <<'NGINX'
