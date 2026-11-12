@@ -58,20 +58,20 @@ form.inline { display: inline-flex; gap: .25rem; margin: 0; }
 label { display: flex; flex-direction: column; gap: .25rem; font-size: .85rem; color: var(--muted); }
 
 input, select {
-    padding: .5rem;
+    padding: .35rem .5rem;
     border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: .95rem;
-    min-width: 160px;
+    border-radius: 5px;
+    font-size: .9rem;
+    min-width: 140px;
 }
 
 button {
     background: var(--primary);
     color: #fff;
     border: none;
-    border-radius: 6px;
-    padding: .5rem 1rem;
-    font-size: .95rem;
+    border-radius: 5px;
+    padding: .3rem .7rem;
+    font-size: .85rem;
     cursor: pointer;
 }
 
@@ -116,7 +116,7 @@ footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 1r
 
 .tool-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1rem;
 }
 
@@ -150,7 +150,7 @@ footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 1r
 .tool-body .meta { margin: .15rem 0; font-size: .85rem; color: var(--muted); }
 .tool-body .owner { font-weight: 600; }
 
-.tool-actions { display: flex; flex-direction: column; gap: .4rem; margin-top: .5rem; }
+.tool-actions { display: flex; flex-direction: column; gap: .35rem; margin-top: .5rem; }
 .tool-actions form { gap: .25rem; }
 .url-form input { flex: 1; min-width: 0; }
 
@@ -182,30 +182,31 @@ section { overflow-x: auto; }
 
 .view-toggle { display: flex; gap: .5rem; margin-bottom: 1rem; }
 .view-toggle .toggle {
-    padding: .35rem .9rem;
+    padding: .25rem .7rem;
     border: 1px solid var(--border);
     border-radius: 999px;
     text-decoration: none;
     color: var(--muted);
-    font-size: .85rem;
+    font-size: .8rem;
 }
 .view-toggle .toggle.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 .tool-list th a { text-decoration: none; color: inherit; }
 
 
-.manage-row { display: flex; gap: .75rem; align-items: center; margin-bottom: .4rem; }
+.manage-row { display: flex; gap: .5rem; align-items: center; margin-bottom: .35rem; flex-wrap: wrap; }
 
 .button-link {
     display: inline-block;
     background: var(--primary);
     color: #fff;
     border: none;
-    border-radius: 6px;
-    padding: .5rem 1rem;
-    font-size: .95rem;
+    border-radius: 5px;
+    padding: .3rem .7rem;
+    font-size: .85rem;
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
+    white-space: nowrap;
 }
 .button-link:hover { background: var(--primary-dark); }
 
@@ -253,7 +254,7 @@ html.dark .link-remove { color: var(--danger); }
 .member-list li { display: flex; align-items: center; gap: .5rem; padding: .2rem 0; }
 .member-list li form { margin-left: auto; }
 
-.reason-input { min-width: 120px; padding: .35rem; border: 1px solid var(--border); border-radius: 6px; }
+.reason-input { min-width: 120px; padding: .35rem .5rem; border: 1px solid var(--border); border-radius: 5px; }
 
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
 .stat-card {
