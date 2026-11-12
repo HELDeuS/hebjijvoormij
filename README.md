@@ -186,12 +186,17 @@ code dan bij in plaats van opnieuw te klonen:
 sudo -u hebjijvoormij git -C /opt/hebjijvoormij/app pull
 ```
 
-Maak de Python-omgeving en installeer de dependencies:
+Maak de Python-omgeving en installeer de dependencies. Controleer
+eerst dat de app-map bestaat en aan `hebjijvoormij` toebehoort; de
+volgende commando's gebruiken absolute paden, zodat ze niet per
+ongeluk in je eigen thuismap (bijv. `/home/gebruiker`) uitgevoerd
+kunnen worden:
 
 ```bash
+sudo chown -R hebjijvoormij:hebjijvoormij /opt/hebjijvoormij/app
 cd /opt/hebjijvoormij/app
-sudo -u hebjijvoormij python3 -m venv venv
-sudo -u hebjijvoormij venv/bin/pip install -r requirements.txt
+sudo -u hebjijvoormij python3 -m venv /opt/hebjijvoormij/app/venv
+sudo -u hebjijvoormij /opt/hebjijvoormij/app/venv/bin/pip install -r /opt/hebjijvoormij/app/requirements.txt
 ```
 
 ### 3. Database en databasegebruiker aanmaken
@@ -266,7 +271,7 @@ Test de app handmatig:
 
 ```bash
 cd /opt/hebjijvoormij/app
-sudo -u hebjijvoormij bash -c 'set -a; source .env; set +a; venv/bin/python app.py'
+sudo -u hebjijvoormij bash -c 'set -a; source .env; set +a; /opt/hebjijvoormij/app/venv/bin/python app.py'
 ```
 
 De app is nu bereikbaar op `http://127.0.0.1:5000`. Log in met de
@@ -393,7 +398,7 @@ Wordt de beheerder niet herkend, controleer dan in deze volgorde:
 2. **Diagnose draaien**:
    ```bash
    cd /opt/hebjijvoormij/app
-   sudo -u hebjijvoormij bash -c 'set -a; source .env; set +a; venv/bin/flask --app app ensure-admin'
+   sudo -u hebjijvoormij bash -c 'set -a; source .env; set +a; /opt/hebjijvoormij/app/venv/bin/flask --app app ensure-admin'
    ```
 3. **Bestaande beheerder wordt niet gewijzigd** — heeft de app ooit
    eerder gedraaid, dan bestaat de beheerder al; een latere wijziging
